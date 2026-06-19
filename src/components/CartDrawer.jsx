@@ -45,7 +45,7 @@ export default function CartDrawer({
       {/* Drawer Container */}
       <div 
         className={`fixed bottom-0 left-0 right-0 bg-white border-t border-zinc-200 rounded-t-2xl z-50 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] flex flex-col ${
-          isOpen ? 'max-h-[85vh] translate-y-0' : 'translate-y-0'
+          isOpen ? 'max-h-[85vh] translate-y-0' : 'translate-y-0 pb-safe'
         }`}
       >
         
