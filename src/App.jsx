@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from 'react';
+import { Suspense } from 'react'
 
 // Example lazy-loaded components ready to use:
 // const Dashboard = lazy(() => import('./components/sections/Dashboard'));
@@ -13,7 +13,7 @@ function App() {
         </main>
       </Suspense>
     </div>
-  );
+  )
 }
 
-export default App;
+export default App

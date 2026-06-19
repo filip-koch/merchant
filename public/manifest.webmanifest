@@ -1,7 +1,7 @@
 {
-  "name": "Merchant App",
+  "name": "Merchant POS",
   "short_name": "Merchant",
-  "description": "A high-performance mobile-first merchant application",
+  "description": "POS Artist",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#121212",

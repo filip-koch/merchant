@@ -14,20 +14,6 @@ export default defineConfig({
       png: {
         quality: 80,
       },
-      svg: {
-        multipass: true,
-        plugins: [
-          {
-            name: 'preset-default',
-            params: {
-              overrides: {
-                cleanupIds: false,
-                removeViewBox: false,
-              },
-            },
-          },
-        ],
-      },
     }),
     VitePWA({
       registerType: 'autoUpdate',
@@ -50,40 +36,43 @@ export default defineConfig({
             src: 'icon-192.png',
             sizes: '192x192',
             type: 'image/png',
-            purpose: 'any'
+            purpose: 'any',
           },
           {
             src: 'icon-512.png',
             sizes: '512x512',
             type: 'image/png',
-            purpose: 'any'
+            purpose: 'any',
           },
           {
             src: 'icon-maskable-192.png',
             sizes: '192x192',
             type: 'image/png',
-            purpose: 'maskable'
+            purpose: 'maskable',
           },
           {
             src: 'icon-maskable-512.png',
             sizes: '512x512',
             type: 'image/png',
-            purpose: 'maskable'
+            purpose: 'maskable',
           },
           {
             src: 'icon.svg',
             sizes: 'any',
             type: 'image/svg+xml',
-            purpose: 'any maskable'
-          }
-        ]
+            purpose: 'any maskable',
+          },
+        ],
       },
       devOptions: {
         enabled: true,
         type: 'module',
-      }
-    })
+      },
+    }),
   ],
+  server: {
+    host: true,
+  },
   build: {
     sourcemap: false,
     rollupOptions: {
@@ -91,14 +80,13 @@ export default defineConfig({
         manualChunks(id) {
           if (id.includes('node_modules')) {
             if (id.includes('react')) {
-              return 'vendor-react';
+              return 'vendor-react'
             }
-            return 'vendor';
+            return 'vendor'
           }
-        }
-      }
+        },
+      },
     },
     chunkSizeWarningLimit: 600,
-  }
+  },
 })
-

@@ -13,14 +13,14 @@
   /* Typography */
   --font-sans: ;
   --font-mono: ;
-  
+
   --font-size-xs: ;
   --font-size-sm: ;
   --font-size-base: ;
   --font-size-lg: ;
   --font-size-xl: ;
   --font-size-2xl: ;
-  
+
   --font-weight-normal: ;
   --font-weight-medium: ;
   --font-weight-semibold: ;
@@ -39,7 +39,7 @@
   --radius-md: ;
   --radius-lg: ;
   --radius-full: ;
-  
+
   --shadow-sm: ;
   --shadow-md: ;
   --shadow-lg: ;
@@ -48,7 +48,7 @@
   --transition-fast: ;
   --transition-normal: ;
   --transition-slow: ;
-  
+
   --ease-in-out: ;
   --ease-out: ;
 }
