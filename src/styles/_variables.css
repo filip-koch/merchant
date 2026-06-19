@@ -1,0 +1,54 @@
+/* CSS custom properties - Design Tokens Placeholder */
+:root {
+  /* Colors */
+  --color-primary: ;
+  --color-primary-hover: ;
+  --color-secondary: ;
+  --color-background: ;
+  --color-surface: ;
+  --color-text: ;
+  --color-text-muted: ;
+  --color-border: ;
+
+  /* Typography */
+  --font-sans: ;
+  --font-mono: ;
+  
+  --font-size-xs: ;
+  --font-size-sm: ;
+  --font-size-base: ;
+  --font-size-lg: ;
+  --font-size-xl: ;
+  --font-size-2xl: ;
+  
+  --font-weight-normal: ;
+  --font-weight-medium: ;
+  --font-weight-semibold: ;
+  --font-weight-bold: ;
+
+  /* Spacing */
+  --spacing-xs: ;
+  --spacing-sm: ;
+  --spacing-md: ;
+  --spacing-lg: ;
+  --spacing-xl: ;
+  --spacing-2xl: ;
+
+  /* Borders & Shadows */
+  --radius-sm: ;
+  --radius-md: ;
+  --radius-lg: ;
+  --radius-full: ;
+  
+  --shadow-sm: ;
+  --shadow-md: ;
+  --shadow-lg: ;
+
+  /* Transitions & Animation Easing */
+  --transition-fast: ;
+  --transition-normal: ;
+  --transition-slow: ;
+  
+  --ease-in-out: ;
+  --ease-out: ;
+}
