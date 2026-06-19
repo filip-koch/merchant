@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import QRCode from 'qrcode';
 import { AlertTriangle } from 'lucide-react';
-import { getCzechIban, generateSpaydString } from '../utils/paymentUtils.js';
+import { getCzechIban, generateSpaydString, triggerHaptic } from '../utils/paymentUtils.js';
 
 export default function PaymentModal({ type, amount, bankInfo, onClose, onConfirm }) {
   const [timeLeft, setTimeLeft] = useState(10); // 10 seconds for cash
@@ -67,6 +67,7 @@ export default function PaymentModal({ type, amount, bankInfo, onClose, onConfir
   const handleConfirm = () => {
     if (timerRef.current) clearInterval(timerRef.current);
     setPaymentSuccess(true);
+    triggerHaptic([80, 50, 120]);
 
     // Fire confirmation event (resets cart)
     onConfirm();

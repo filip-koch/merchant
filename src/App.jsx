@@ -3,7 +3,7 @@ import { Settings, ShoppingBag } from 'lucide-react';
 import SettingsScreen from './components/SettingsScreen';
 import CartDrawer from './components/CartDrawer';
 import PaymentModal from './components/PaymentModal';
-import { getItemTotal } from './utils/paymentUtils.js';
+import { getItemTotal, triggerHaptic } from './utils/paymentUtils.js';
 
 function App() {
   // Screens & overlays state
@@ -61,6 +61,7 @@ function App() {
 
   // Cart Functions
   const handleAddToCart = (product) => {
+    triggerHaptic(15);
     setCart((prevCart) => {
       const existing = prevCart.find((item) => item.id === product.id);
       if (existing) {
@@ -73,6 +74,7 @@ function App() {
   };
 
   const handleUpdateQuantity = (id, quantity) => {
+    triggerHaptic(10);
     if (quantity <= 0) {
       handleRemoveItem(id);
     } else {
@@ -83,10 +85,12 @@ function App() {
   };
 
   const handleRemoveItem = (id) => {
+    triggerHaptic([30, 40, 30]);
     setCart((prevCart) => prevCart.filter((item) => item.id !== id));
   };
 
   const handleClearCart = () => {
+    triggerHaptic([40, 30, 40]);
     setCart([]);
   };
 

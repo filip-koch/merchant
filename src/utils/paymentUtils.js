@@ -120,3 +120,19 @@ export function getItemTotal(item) {
   }
   return price * quantity;
 }
+
+/**
+ * Triggers haptic vibration feedback if supported by the client device.
+ * 
+ * @param {number|number[]} pattern - Vibration duration in ms or a pattern array
+ */
+export function triggerHaptic(pattern) {
+  if (typeof navigator !== 'undefined' && navigator.vibrate) {
+    try {
+      navigator.vibrate(pattern);
+    } catch (e) {
+      console.warn('Haptics not supported or blocked:', e);
+    }
+  }
+}
+
