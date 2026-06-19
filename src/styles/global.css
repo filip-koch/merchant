@@ -46,7 +46,7 @@ html, body {
 }
 
 html.modal-open, body.modal-open {
-  background-color: #a1a1aa !important;
+  background-color: #b2b2b2 !important;
 }
 
 #root {

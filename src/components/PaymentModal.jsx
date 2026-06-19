@@ -25,7 +25,7 @@ export default function PaymentModal({ type, amount, bankInfo, onClose, onConfir
       meta.name = 'theme-color';
       document.head.appendChild(meta);
     }
-    meta.content = '#a1a1aa';
+    meta.content = '#b2b2b2';
     document.documentElement.classList.add('modal-open');
     document.body.classList.add('modal-open');
 
@@ -43,7 +43,7 @@ export default function PaymentModal({ type, amount, bankInfo, onClose, onConfir
   useEffect(() => {
     if (type === 'cash' && !paymentSuccess) {
       const startTime = Date.now();
-      const duration = 10000; // 10 seconds in ms
+      const duration = 12000; // 10 seconds in ms
 
       timerRef.current = setInterval(() => {
         const elapsed = Date.now() - startTime;
@@ -107,7 +107,7 @@ export default function PaymentModal({ type, amount, bankInfo, onClose, onConfir
   };
 
   return (
-    <div className="fixed inset-0 bg-black/35 backdrop-blur-md flex items-center justify-center p-4 z-[100] animate-fade-in select-none">
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-[100] animate-fade-in select-none">
       <div className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl border border-zinc-100 animate-scale-in flex flex-col p-6 min-h-[380px]">
 
         {/* SUCCESS SCREEN STATE */}

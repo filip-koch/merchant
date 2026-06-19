@@ -21,7 +21,7 @@ export default function CartDrawer({
         meta.name = 'theme-color';
         document.head.appendChild(meta);
       }
-      meta.content = '#a1a1aa';
+      meta.content = '#b2b2b2';
       document.documentElement.classList.add('modal-open');
       document.body.classList.add('modal-open');
     } else {
