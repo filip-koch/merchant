@@ -15,8 +15,8 @@ body {
     'Open Sans',
     'Helvetica Neue',
     sans-serif;
-  background-color: #121212; /* Default dark background for PWA shell */
-  color: #f3f4f6; /* High contrast text default */
+  background-color: #ffffff; /* Default white background */
+  color: #000000;
   overflow-x: hidden;
 
   /* Support for notches / safe areas in iOS and modern android */
