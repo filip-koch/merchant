@@ -16,7 +16,7 @@ export default function CartDrawer({
 
   if (cart.length === 0) {
     return (
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-zinc-100 py-4 px-6 flex justify-center items-center gap-2 text-zinc-400 text-sm font-medium z-40 select-none shadow-[0_-4px_12px_rgba(0,0,0,0.03)] safe-bottom">
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-zinc-100 pt-4 px-6 flex justify-center items-center gap-2 text-zinc-400 text-sm font-medium z-40 select-none shadow-[0_-4px_12px_rgba(0,0,0,0.03)] pb-safe">
         <ShoppingBag size={18} strokeWidth={2} />
         <span>Košík je prázdný</span>
       </div>
@@ -130,7 +130,7 @@ export default function CartDrawer({
             </div>
 
             {/* CHECKOUT METHODS */}
-            <div className="p-6 bg-white border-t border-zinc-100 flex flex-col gap-4 pb-safe safe-bottom">
+            <div className="pt-6 px-6 bg-white border-t border-zinc-100 flex flex-col gap-4 pb-safe">
               {!bankConfigured && (
                 <div className="bg-amber-50 border border-amber-100 text-amber-800 rounded-xl px-4 py-3 text-xs leading-relaxed flex items-start gap-2">
                   <AlertTriangle size={14} className="mt-0.5 shrink-0 text-amber-600" />
