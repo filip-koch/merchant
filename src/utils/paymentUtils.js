@@ -97,3 +97,26 @@ export const CZECH_BANKS = [
   { code: '7910', name: 'mBank' },
   { code: '8030', name: 'Equa bank' },
 ];
+
+/**
+ * Calculates the total price for a cart item stack, evaluating any custom product script.
+ * 
+ * @param {object} item - Cart item object
+ * @returns {number} Computed total price
+ */
+export function getItemTotal(item) {
+  const price = item.price;
+  const quantity = item.quantity;
+  if (item.script && item.script.trim()) {
+    try {
+      const evalFn = new Function('quantity', 'price', item.script);
+      const result = evalFn(quantity, price);
+      if (typeof result === 'number' && !isNaN(result)) {
+        return result;
+      }
+    } catch (e) {
+      console.error('Chyba při výpočtu ceny skriptem:', e);
+    }
+  }
+  return price * quantity;
+}

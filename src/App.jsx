@@ -3,6 +3,7 @@ import { Settings, ShoppingBag } from 'lucide-react';
 import SettingsScreen from './components/SettingsScreen';
 import CartDrawer from './components/CartDrawer';
 import PaymentModal from './components/PaymentModal';
+import { getItemTotal } from './utils/paymentUtils.js';
 
 function App() {
   // Screens & overlays state
@@ -89,7 +90,7 @@ function App() {
     setCart([]);
   };
 
-  const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const cartTotal = cart.reduce((sum, item) => sum + getItemTotal(item), 0);
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-zinc-50 select-none">

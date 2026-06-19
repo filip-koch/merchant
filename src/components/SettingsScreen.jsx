@@ -13,6 +13,8 @@ export default function SettingsScreen({ onClose }) {
   const [products, setProducts] = useState([]);
   const [newItemName, setNewItemName] = useState('');
   const [newItemPrice, setNewItemPrice] = useState('');
+  const [newItemScript, setNewItemScript] = useState('');
+  const [showScriptField, setShowScriptField] = useState(false);
 
   // Load configuration and products on mount
   useEffect(() => {
@@ -35,7 +37,7 @@ export default function SettingsScreen({ onClose }) {
     setError('');
     setSuccess(false);
 
-    // Validate account details ONLY if they are entered
+    // Validate bank details ONLY if they are entered
     const cleanAccount = accountNumber.trim();
     const cleanBank = bankId.trim();
 
@@ -57,7 +59,7 @@ export default function SettingsScreen({ onClose }) {
 
     // Save business name
     localStorage.setItem('pos_business_name', businessName.trim() || 'Artist');
-
+    
     setSuccess(true);
     setTimeout(() => {
       setSuccess(false);
@@ -74,7 +76,8 @@ export default function SettingsScreen({ onClose }) {
     const newProduct = {
       id: `prod-${Date.now()}`,
       name,
-      price
+      price,
+      script: showScriptField ? newItemScript.trim() : ''
     };
 
     const updatedProducts = [...products, newProduct];
@@ -84,6 +87,8 @@ export default function SettingsScreen({ onClose }) {
     // Reset form fields
     setNewItemName('');
     setNewItemPrice('');
+    setNewItemScript('');
+    setShowScriptField(false);
   };
 
   const handleDeleteProduct = (id) => {
@@ -94,12 +99,12 @@ export default function SettingsScreen({ onClose }) {
 
   return (
     <div className="fixed inset-0 bg-zinc-50 z-[100] flex flex-col overflow-hidden animate-slide-up select-none">
-
+      
       {/* Header */}
       <header className="flex justify-between items-center bg-white border-b border-zinc-100 px-6 py-4 safe-top shrink-0">
-        <button
-          onClick={onClose}
-          className="p-2 text-zinc-500 hover:text-zinc-955 hover:bg-zinc-50 rounded-full transition-all active:scale-90 cursor-pointer"
+        <button 
+          onClick={onClose} 
+          className="p-2 text-zinc-500 hover:text-zinc-955 hover:bg-zinc-50 rounded-full transition-all active:scale-90 cursor-pointer" 
           aria-label="Zpět"
         >
           <ArrowLeft size={20} strokeWidth={2.5} />
@@ -109,10 +114,10 @@ export default function SettingsScreen({ onClose }) {
       </header>
 
       <div className="flex-1 overflow-y-auto px-6 py-6 custom-scrollbar max-w-lg mx-auto w-full pb-16">
-
+        
         {/* Section 1: General settings */}
         <h3 className="text-sm font-bold text-zinc-900 mb-4">Obecná nastavení a platby</h3>
-
+        
         <div className="flex gap-3 bg-zinc-100/50 border border-zinc-200/50 p-4 rounded-2xl mb-5">
           <Info size={16} className="text-zinc-500 shrink-0 mt-0.5" />
           <p className="text-xs leading-relaxed text-zinc-500">
@@ -181,8 +186,8 @@ export default function SettingsScreen({ onClose }) {
             </div>
           )}
 
-          <button
-            type="submit"
+          <button 
+            type="submit" 
             className="bg-zinc-950 hover:bg-zinc-800 text-white font-semibold py-3.5 px-4 rounded-xl text-sm transition-all active:scale-[0.98] cursor-pointer text-center w-full mt-2"
           >
             Uložit nastavení
@@ -198,7 +203,7 @@ export default function SettingsScreen({ onClose }) {
         {/* Form to add a new product */}
         <form onSubmit={handleAddProduct} className="flex flex-col gap-4 bg-white border border-zinc-200 rounded-2xl p-5 mb-6 shadow-sm shadow-zinc-100/50">
           <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Nový produkt</span>
-
+          
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
             <div className="flex-1 flex flex-col gap-1.5">
               <label className="text-[11px] font-semibold text-zinc-500 uppercase">Název</label>
@@ -226,8 +231,47 @@ export default function SettingsScreen({ onClose }) {
             </div>
           </div>
 
-          <button
-            type="submit"
+          {/* Script section */}
+          <div className="border-t border-zinc-100 pt-4 flex flex-col gap-3">
+            <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-zinc-500 select-none">
+              <input
+                type="checkbox"
+                checked={showScriptField}
+                onChange={(e) => setShowScriptField(e.target.checked)}
+                className="w-4 h-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900 cursor-pointer"
+              />
+              Aktivovat pokročilé chování (skript)
+            </label>
+
+            {showScriptField && (
+              <div className="flex flex-col gap-2.5 animate-fade-in">
+                <span className="text-[10px] text-zinc-400 leading-normal">
+                  Napište JavaScript, který vrátí celkovou cenu (v Kč) pro daný počet kusů. K dispozici jsou proměnné <code className="bg-zinc-100 px-1 rounded text-zinc-700 font-mono">quantity</code> (množství) a <code className="bg-zinc-100 px-1 rounded text-zinc-700 font-mono">price</code> (cena za kus).
+                </span>
+                
+                <textarea
+                  placeholder="return quantity * price;"
+                  rows="3"
+                  value={newItemScript}
+                  onChange={(e) => setNewItemScript(e.target.value)}
+                  className="bg-zinc-50/50 border border-zinc-200 rounded-xl px-4 py-3 text-xs font-mono text-zinc-800 placeholder-zinc-400 focus:outline-none focus:border-zinc-800 focus:ring-1 focus:ring-zinc-800 transition-all w-full"
+                />
+
+                <div className="flex flex-wrap gap-1.5 mt-1">
+                  <button
+                    type="button"
+                    onClick={() => setNewItemScript('return (Math.floor(quantity / 3) * 2 + (quantity % 3)) * price;')}
+                    className="text-[10px] bg-zinc-100 hover:bg-zinc-200 text-zinc-700 font-semibold px-2 py-1.5 rounded-lg active:scale-95 transition-all cursor-pointer"
+                  >
+                    Šablona: 3 za cenu 2 (2+1 zdarma)
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <button 
+            type="submit" 
             className="bg-zinc-950 hover:bg-zinc-800 text-white font-semibold py-3 px-4 rounded-xl text-xs transition-all active:scale-[0.98] cursor-pointer text-center flex items-center justify-center gap-1.5 mt-2"
           >
             <Plus size={14} strokeWidth={2.5} /> Přidat produkt
@@ -246,7 +290,14 @@ export default function SettingsScreen({ onClose }) {
               {products.map((product) => (
                 <div key={product.id} className="flex justify-between items-center bg-white border border-zinc-200/80 rounded-xl p-3.5 shadow-sm shadow-zinc-100/50">
                   <div className="flex flex-col pr-4">
-                    <span className="text-xs font-semibold text-zinc-800 leading-snug">{product.name}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold text-zinc-800 leading-snug">{product.name}</span>
+                      {product.script && (
+                        <span className="bg-zinc-50 border border-zinc-200/60 text-zinc-500 text-[8px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider select-none shrink-0" title="Obsahuje speciální chování">
+                          Skript
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-xs font-bold text-zinc-900">{product.price} Kč</span>

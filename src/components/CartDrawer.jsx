@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ShoppingBag, ChevronUp, ChevronDown, Trash2, Banknote, QrCode, AlertTriangle } from 'lucide-react';
+import { getItemTotal } from '../utils/paymentUtils.js';
 
 export default function CartDrawer({ 
   cart, 
@@ -11,7 +12,7 @@ export default function CartDrawer({
   const [isOpen, setIsOpen] = useState(false);
 
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-  const totalPrice = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const totalPrice = cart.reduce((sum, item) => sum + getItemTotal(item), 0);
 
   if (cart.length === 0) {
     return (
@@ -86,7 +87,12 @@ export default function CartDrawer({
                       {item.name}
                     </span>
                     <span className="text-[11px] text-zinc-400">
-                      {item.price.toLocaleString('cs-CZ')} Kč/ks • {(item.price * item.quantity).toLocaleString('cs-CZ')} Kč
+                      {item.price.toLocaleString('cs-CZ')} Kč/ks • {getItemTotal(item).toLocaleString('cs-CZ')} Kč
+                      {getItemTotal(item) !== item.price * item.quantity && (
+                        <span className="text-zinc-400 line-through ml-1.5">
+                          {(item.price * item.quantity).toLocaleString('cs-CZ')} Kč
+                        </span>
+                      )}
                     </span>
                   </div>
 
