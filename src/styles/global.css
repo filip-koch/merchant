@@ -45,6 +45,10 @@ html, body {
   height: 100%;
 }
 
+html.modal-open, body.modal-open {
+  background-color: #a1a1aa !important;
+}
+
 #root {
   background-color: #ffffff;
   color: #18181b;

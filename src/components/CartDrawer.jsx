@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ShoppingBag, ChevronUp, ChevronDown, Trash2, Banknote, QrCode, AlertTriangle } from 'lucide-react';
 import { getItemTotal } from '../utils/paymentUtils.js';
 
@@ -10,6 +10,38 @@ export default function CartDrawer({
   bankConfigured 
 }) {
   const [isOpen, setIsOpen] = useState(false);
+
+  // Handle status bar blending when cart drawer is expanded (blurred backdrop active)
+  useEffect(() => {
+    if (isOpen) {
+      let meta = document.getElementById('dynamic-theme-color');
+      if (!meta) {
+        meta = document.createElement('meta');
+        meta.id = 'dynamic-theme-color';
+        meta.name = 'theme-color';
+        document.head.appendChild(meta);
+      }
+      meta.content = '#a1a1aa';
+      document.documentElement.classList.add('modal-open');
+      document.body.classList.add('modal-open');
+    } else {
+      const meta = document.getElementById('dynamic-theme-color');
+      if (meta) {
+        meta.content = '#ffffff';
+      }
+      document.documentElement.classList.remove('modal-open');
+      document.body.classList.remove('modal-open');
+    }
+
+    return () => {
+      const meta = document.getElementById('dynamic-theme-color');
+      if (meta) {
+        meta.content = '#ffffff';
+      }
+      document.documentElement.classList.remove('modal-open');
+      document.body.classList.remove('modal-open');
+    };
+  }, [isOpen]);
 
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
   const totalPrice = cart.reduce((sum, item) => sum + getItemTotal(item), 0);

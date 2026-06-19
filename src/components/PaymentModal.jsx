@@ -16,6 +16,29 @@ export default function PaymentModal({ type, amount, bankInfo, onClose, onConfir
 
   const spaydString = iban ? generateSpaydString(iban, amount) : '';
 
+  // Handle status bar blending when modal is open
+  useEffect(() => {
+    let meta = document.getElementById('dynamic-theme-color');
+    if (!meta) {
+      meta = document.createElement('meta');
+      meta.id = 'dynamic-theme-color';
+      meta.name = 'theme-color';
+      document.head.appendChild(meta);
+    }
+    meta.content = '#a1a1aa';
+    document.documentElement.classList.add('modal-open');
+    document.body.classList.add('modal-open');
+
+    return () => {
+      const currentMeta = document.getElementById('dynamic-theme-color');
+      if (currentMeta) {
+        currentMeta.content = '#ffffff';
+      }
+      document.documentElement.classList.remove('modal-open');
+      document.body.classList.remove('modal-open');
+    };
+  }, []);
+
   // Handle Cash Countdown Timer
   useEffect(() => {
     if (type === 'cash' && !paymentSuccess) {
