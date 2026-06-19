@@ -1,7 +1,10 @@
 @import './_variables.css';
 @import './_reset.css';
 
-/* Global styles & PWA integration helper defaults */
+html {
+  background-color: #ffffff;
+}
+
 body {
   font-family:
     system-ui,
@@ -18,16 +21,14 @@ body {
   background-color: #ffffff; /* Default white background */
   color: #000000;
   overflow-x: hidden;
-
-  /* Support for notches / safe areas in iOS and modern android */
-  padding-top: env(safe-area-inset-top, 0px);
-  padding-right: env(safe-area-inset-right, 0px);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-  padding-left: env(safe-area-inset-left, 0px);
+  margin: 0;
+  padding: 0;
 }
 
 #root {
   min-height: 100vh;
+  min-height: -webkit-fill-available;
+  background-color: #ffffff;
   display: flex;
   flex-direction: column;
 }
