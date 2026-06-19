@@ -20,7 +20,7 @@ export default function PaymentModal({ type, amount, bankInfo, onClose, onConfir
   useEffect(() => {
     if (type === 'cash' && !paymentSuccess) {
       const startTime = Date.now();
-      const duration = 12000; // 12 seconds in ms
+      const duration = 10000; // 10 seconds in ms
 
       timerRef.current = setInterval(() => {
         const elapsed = Date.now() - startTime;

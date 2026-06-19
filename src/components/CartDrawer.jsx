@@ -16,7 +16,7 @@ export default function CartDrawer({
 
   if (cart.length === 0) {
     return (
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-zinc-100 pt-4 px-6 flex justify-center items-center gap-2 text-zinc-400 text-sm font-medium z-40 select-none shadow-[0_-4px_12px_rgba(0,0,0,0.03)] pb-safe">
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-zinc-100 pt-4 px-6 flex justify-center items-center gap-2 text-zinc-400 text-sm font-medium z-40 select-none shadow-[0_-4px_12px_rgba(0,0,0,0.03)] pb-safe animate-slide-up">
         <ShoppingBag size={18} strokeWidth={2} />
         <span>Košík je prázdný</span>
       </div>
@@ -54,7 +54,10 @@ export default function CartDrawer({
           <div className="w-10 h-1 bg-zinc-200 rounded-full mb-3 shrink-0" />
           <div className="w-full flex justify-between items-center">
             <div className="flex items-center gap-2.5">
-              <span className="bg-zinc-950 text-white text-[11px] font-bold min-w-[20px] h-5 rounded-full flex justify-center items-center px-1.5 shadow-sm">
+              <span 
+                key={totalItems} 
+                className="bg-zinc-950 text-white text-[11px] font-bold min-w-[20px] h-5 rounded-full flex justify-center items-center px-1.5 shadow-sm animate-pop"
+              >
                 {totalItems}
               </span>
               <span className="font-semibold text-sm text-zinc-800">
@@ -64,7 +67,10 @@ export default function CartDrawer({
             
             <div className="flex items-center gap-3">
               {isOpen && <span className="text-xs text-zinc-400">K úhradě:</span>}
-              <span className="font-bold text-base text-zinc-900">
+              <span 
+                key={totalPrice} 
+                className="font-bold text-base text-zinc-900 animate-pop inline-block"
+              >
                 {totalPrice.toLocaleString('cs-CZ')} Kč
               </span>
               <span className="text-zinc-400 transition-transform duration-200">
@@ -81,7 +87,7 @@ export default function CartDrawer({
             {/* ITEM LIST */}
             <div className="overflow-y-auto px-6 py-4 max-h-[40vh] flex flex-col gap-4 custom-scrollbar">
               {cart.map((item) => (
-                <div key={item.id} className="flex justify-between items-center py-2.5 border-b border-zinc-100 last:border-0">
+                <div key={item.id} className="flex justify-between items-center py-2.5 border-b border-zinc-100 last:border-0 animate-scale-in">
                   <div className="flex flex-col gap-0.5 flex-1 pr-4">
                     <span className="font-medium text-sm text-zinc-800 leading-snug">
                       {item.name}

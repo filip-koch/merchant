@@ -138,7 +138,7 @@ function App() {
               <button
                 key={product.id}
                 onClick={() => handleAddToCart(product)}
-                className="bg-white border border-zinc-200/80 rounded-2xl p-5 flex flex-col justify-between items-start min-h-[110px] text-left hover:border-zinc-400 active:scale-[0.98] transition-all cursor-pointer shadow-sm shadow-zinc-100/50 group"
+                className="bg-white border border-zinc-200/80 rounded-2xl p-5 flex flex-col justify-between items-start min-h-[110px] text-left hover:border-zinc-400 active:scale-[0.94] active:border-zinc-300 transition-all duration-150 cursor-pointer shadow-sm shadow-zinc-100/50 group"
               >
                 <span className="text-[15px] font-semibold text-zinc-900 leading-tight mt-1">{product.name}</span>
                 <span className="text-sm font-medium text-zinc-505 mt-2">{product.price.toLocaleString('cs-CZ')} Kč</span>
