@@ -45,12 +45,12 @@ export default function CartDrawer({
       {/* Drawer Container */}
       <div 
         className={`fixed bottom-0 left-0 right-0 bg-white border-t border-zinc-200 rounded-t-2xl z-50 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] flex flex-col ${
-          isOpen ? 'max-h-[85vh] translate-y-0' : 'translate-y-0 pb-safe'
+          isOpen ? 'max-h-[85vh] translate-y-0' : 'translate-y-0'
         }`}
       >
         
         {/* DRAG HANDLE / COLLAPSED BAR HEADER */}
-        <div className="px-6 py-4 flex flex-col items-center cursor-pointer border-b border-zinc-50 select-none shrink-0" onClick={toggleDrawer}>
+        <div className={`px-6 pt-4 flex flex-col items-center cursor-pointer border-b border-zinc-50 select-none shrink-0 ${isOpen ? 'pb-4' : 'pb-safe'}`} onClick={toggleDrawer}>
           <div className="w-10 h-1 bg-zinc-200 rounded-full mb-3 shrink-0" />
           <div className="w-full flex justify-between items-center">
             <div className="flex items-center gap-2.5">
