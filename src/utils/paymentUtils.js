@@ -14,28 +14,28 @@
  * @returns {string} The full computed IBAN
  */
 export function getCzechIban(accountNumber, bankId) {
-  let prefix = '000000';
-  let mainNumber = '';
+  let prefix = '000000'
+  let mainNumber
 
-  const cleanAccount = accountNumber.trim();
+  const cleanAccount = accountNumber.trim()
   if (cleanAccount.includes('-')) {
-    const parts = cleanAccount.split('-');
-    prefix = parts[0].replace(/\D/g, '').padStart(6, '0');
-    mainNumber = parts[1].replace(/\D/g, '').padStart(10, '0');
+    const parts = cleanAccount.split('-')
+    prefix = parts[0].replace(/\D/g, '').padStart(6, '0')
+    mainNumber = parts[1].replace(/\D/g, '').padStart(10, '0')
   } else {
-    mainNumber = cleanAccount.replace(/\D/g, '').padStart(10, '0');
+    mainNumber = cleanAccount.replace(/\D/g, '').padStart(10, '0')
   }
 
-  const cleanBankId = bankId.trim().replace(/\D/g, '').padStart(4, '0');
+  const cleanBankId = bankId.trim().replace(/\D/g, '').padStart(4, '0')
 
   // Rearrange for IBAN mod-97 check digit calc:
   // numeric = BBBB + PPPPPP + CCCCCCCCCC + 1235 (C=12, Z=35) + 00
-  const numericStr = `${cleanBankId}${prefix}${mainNumber}123500`;
+  const numericStr = `${cleanBankId}${prefix}${mainNumber}123500`
 
-  const mod = Number(BigInt(numericStr) % 97n);
-  const checkDigits = (98 - mod).toString().padStart(2, '0');
+  const mod = Number(BigInt(numericStr) % 97n)
+  const checkDigits = (98 - mod).toString().padStart(2, '0')
 
-  return `CZ${checkDigits}${cleanBankId}${prefix}${mainNumber}`;
+  return `CZ${checkDigits}${cleanBankId}${prefix}${mainNumber}`
 }
 
 /**
@@ -48,17 +48,17 @@ export function getCzechIban(accountNumber, bankId) {
  * @returns {string} SPAYD string
  */
 export function generateSpaydString(iban, amount, message = 'POS-Platba') {
-  const cleanIban = iban.replace(/\s/g, '').toUpperCase();
-  const formattedAmount = amount.toFixed(2);
+  const cleanIban = iban.replace(/\s/g, '').toUpperCase()
+  const formattedAmount = amount.toFixed(2)
 
   // Sanitize: strip diacritics, remove SPAYD delimiter asterisks, cap at 60 chars
   const sanitizedMsg = message
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[*]/g, ' ')
-    .substring(0, 60);
+    .substring(0, 60)
 
-  return `SPD*1.0*ACC:${cleanIban}*AM:${formattedAmount}*CC:CZK*MSG:${sanitizedMsg}`;
+  return `SPD*1.0*ACC:${cleanIban}*AM:${formattedAmount}*CC:CZK*MSG:${sanitizedMsg}`
 }
 
 /**
@@ -69,9 +69,9 @@ export function generateSpaydString(iban, amount, message = 'POS-Platba') {
  * @returns {boolean}
  */
 export function validateCzechAccount(account) {
-  const clean = account.trim();
-  if (!clean) return false;
-  return /^\d{1,10}$/.test(clean) || /^\d{1,6}-\d{1,10}$/.test(clean);
+  const clean = account.trim()
+  if (!clean) return false
+  return /^\d{1,10}$/.test(clean) || /^\d{1,6}-\d{1,10}$/.test(clean)
 }
 
 /**
@@ -81,7 +81,7 @@ export function validateCzechAccount(account) {
  * @returns {boolean}
  */
 export function validateBankId(bankId) {
-  return /^\d{4}$/.test(bankId.trim());
+  return /^\d{4}$/.test(bankId.trim())
 }
 
 /** Major Czech banks for quick-select UI */
@@ -96,43 +96,42 @@ export const CZECH_BANKS = [
   { code: '6000', name: 'PPF banka' },
   { code: '7910', name: 'mBank' },
   { code: '8030', name: 'Equa bank' },
-];
+]
 
 /**
  * Calculates the total price for a cart item stack, evaluating any custom product script.
- * 
+ *
  * @param {object} item - Cart item object
  * @returns {number} Computed total price
  */
 export function getItemTotal(item) {
-  const price = item.price;
-  const quantity = item.quantity;
+  const price = item.price
+  const quantity = item.quantity
   if (item.script && item.script.trim()) {
     try {
-      const evalFn = new Function('quantity', 'price', item.script);
-      const result = evalFn(quantity, price);
+      const evalFn = new Function('quantity', 'price', item.script)
+      const result = evalFn(quantity, price)
       if (typeof result === 'number' && !isNaN(result)) {
-        return result;
+        return result
       }
     } catch (e) {
-      console.error('Chyba při výpočtu ceny skriptem:', e);
+      console.error('Chyba při výpočtu ceny skriptem:', e)
     }
   }
-  return price * quantity;
+  return price * quantity
 }
 
 /**
  * Triggers haptic vibration feedback if supported by the client device.
- * 
+ *
  * @param {number|number[]} pattern - Vibration duration in ms or a pattern array
  */
 export function triggerHaptic(pattern) {
   if (typeof navigator !== 'undefined' && navigator.vibrate) {
     try {
-      navigator.vibrate(pattern);
+      navigator.vibrate(pattern)
     } catch (e) {
-      console.warn('Haptics not supported or blocked:', e);
+      console.warn('Haptics not supported or blocked:', e)
     }
   }
 }
-

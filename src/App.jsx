@@ -1,115 +1,104 @@
-import React, { useState, useEffect } from 'react';
-import { Settings, ShoppingBag } from 'lucide-react';
-import SettingsScreen from './components/SettingsScreen';
-import CartDrawer from './components/CartDrawer';
-import PaymentModal from './components/PaymentModal';
-import { getItemTotal, triggerHaptic } from './utils/paymentUtils.js';
+import { useState } from 'react'
+import { Settings, ShoppingBag, Sparkles } from 'lucide-react'
+import { useMerchant } from './context/useMerchant.js'
+import SettingsScreen from './components/SettingsScreen.jsx'
+import CartDrawer from './components/CartDrawer.jsx'
+import PaymentModal from './components/PaymentModal.jsx'
+import OnboardingScreen from './components/Onboarding/OnboardingScreen.jsx'
+import { getItemTotal, triggerHaptic } from './utils/paymentUtils.js'
 
-function App() {
+function PosApp() {
+  const { instance, settings, products, isLoading } = useMerchant()
+
   // Screens & overlays state
-  const [activeScreen, setActiveScreen] = useState('pos'); // 'pos' or 'settings'
-  
-  // Cart state
-  const [cart, setCart] = useState([]);
-  
-  // Dynamic products list loaded from localStorage
-  const [products, setProducts] = useState([]);
+  const [activeScreen, setActiveScreen] = useState('pos') // 'pos' or 'settings'
 
-  // Business/Header name state
-  const [businessName, setBusinessName] = useState('Artist');
+  // Cart state
+  const [cart, setCart] = useState([])
 
   // Payment flow state
-  const [paymentFlow, setPaymentFlow] = useState({ isOpen: false, type: null }); // type: 'cash' or 'qr'
-  
-  // Loaded bank account details
-  const [bankInfo, setBankInfo] = useState({ accountNumber: '', bankId: '' });
+  const [paymentFlow, setPaymentFlow] = useState({ isOpen: false, type: null }) // type: 'cash' or 'qr'
 
-  // Load configuration from localStorage
-  const loadConfig = () => {
-    const accountNumber = localStorage.getItem('pos_bank_account') || '';
-    const bankId = localStorage.getItem('pos_bank_id') || '';
-    setBankInfo({ accountNumber, bankId });
-
-    const savedName = localStorage.getItem('pos_business_name');
-    setBusinessName(savedName || 'Artist');
-  };
-
-  // Load products list from localStorage
-  const loadProducts = () => {
-    const stored = localStorage.getItem('pos_products');
-    if (stored) {
-      setProducts(JSON.parse(stored));
-    } else {
-      setProducts([]);
-    }
-  };
-
-  useEffect(() => {
-    loadConfig();
-    loadProducts();
-  }, []);
-
-  // Reload config and products when returning from settings screen
-  useEffect(() => {
-    if (activeScreen === 'pos') {
-      loadConfig();
-      loadProducts();
-    }
-  }, [activeScreen]);
-
-  const isBankConfigured = !!(bankInfo.accountNumber && bankInfo.bankId);
+  // Bank configuration
+  const bankInfo = {
+    accountNumber: settings.accountNumber || '',
+    bankId: settings.bankId || '',
+  }
+  const isBankConfigured = Boolean(bankInfo.accountNumber && bankInfo.bankId)
 
   // Cart Functions
   const handleAddToCart = (product) => {
-    triggerHaptic(15);
+    triggerHaptic(15)
     setCart((prevCart) => {
-      const existing = prevCart.find((item) => item.id === product.id);
+      const existing = prevCart.find((item) => item.id === product.id)
       if (existing) {
-        return prevCart.map((item) => 
-          item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
-        );
+        return prevCart.map((item) =>
+          item.id === product.id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        )
       }
-      return [...prevCart, { ...product, quantity: 1 }];
-    });
-  };
+      return [...prevCart, { ...product, quantity: 1 }]
+    })
+  }
+
+  const handleRemoveItem = (id) => {
+    triggerHaptic([30, 40, 30])
+    setCart((prevCart) => prevCart.filter((item) => item.id !== id))
+  }
 
   const handleUpdateQuantity = (id, quantity) => {
-    triggerHaptic(10);
+    triggerHaptic(10)
     if (quantity <= 0) {
-      handleRemoveItem(id);
+      handleRemoveItem(id)
     } else {
       setCart((prevCart) =>
         prevCart.map((item) => (item.id === id ? { ...item, quantity } : item))
-      );
+      )
     }
-  };
-
-  const handleRemoveItem = (id) => {
-    triggerHaptic([30, 40, 30]);
-    setCart((prevCart) => prevCart.filter((item) => item.id !== id));
-  };
+  }
 
   const handleClearCart = () => {
-    triggerHaptic([40, 30, 40]);
-    setCart([]);
-  };
+    triggerHaptic([40, 30, 40])
+    setCart([])
+  }
 
-  const cartTotal = cart.reduce((sum, item) => sum + getItemTotal(item), 0);
+  const cartTotal = cart.reduce((sum, item) => sum + getItemTotal(item), 0)
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[100dvh] bg-zinc-50 select-none">
+        <div className="w-10 h-10 rounded-2xl bg-zinc-950 flex items-center justify-center shadow-md animate-pop">
+          <Sparkles size={20} className="text-white" />
+        </div>
+        <span className="text-xs font-bold text-zinc-500 mt-4 tracking-wider uppercase">
+          Merchant 2.0
+        </span>
+      </div>
+    )
+  }
+
+  // If no instance exists or not initialized yet, show the Onboarding screen
+  if (!instance?.isInitialized) {
+    return <OnboardingScreen />
+  }
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-zinc-50 select-none">
-      
+    <div className="flex flex-col h-[100dvh] overflow-hidden bg-zinc-50 select-none">
       {/* HEADER SECTION */}
       <header className="flex justify-between items-center bg-white border-b border-zinc-100 px-6 py-4 safe-top z-10 shrink-0">
         <div className="flex items-center gap-2">
-          <span className="text-xl font-bold tracking-tight text-zinc-900">{businessName}</span>
+          <span className="text-xl font-bold tracking-tight text-zinc-900">
+            {settings.businessName || 'Pokladna'}
+          </span>
         </div>
 
         <div className="flex items-center gap-3">
           {/* Settings Button */}
-          <button 
-            onClick={() => setActiveScreen('settings')} 
-            className="p-2 text-zinc-500 hover:text-zinc-955 hover:bg-zinc-50 rounded-full transition-all active:scale-90 cursor-pointer"
+          <button
+            onClick={() => setActiveScreen('settings')}
+            className="p-2 text-zinc-500 hover:text-zinc-950 hover:bg-zinc-50 rounded-full transition-all active:scale-90 cursor-pointer"
             aria-label="Nastavení"
           >
             <Settings size={20} strokeWidth={2} />
@@ -120,15 +109,17 @@ function App() {
       {/* POS WORKSPACE / PRODUCTS GRID */}
       <main className="flex-1 overflow-y-auto px-6 py-6 pb-28 custom-scrollbar">
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 max-w-4xl mx-auto">
-          
           {products.length === 0 ? (
             <div className="col-span-2 sm:col-span-3 flex flex-col items-center justify-center text-center py-16 px-6 bg-white border border-zinc-200/80 rounded-2xl shadow-sm shadow-zinc-100/50">
               <div className="w-12 h-12 rounded-full bg-zinc-50 flex items-center justify-center mb-4">
                 <ShoppingBag size={22} className="text-zinc-400" />
               </div>
-              <h3 className="text-sm font-bold text-zinc-900">Zatím nemáte žádné produkty</h3>
+              <h3 className="text-sm font-bold text-zinc-900">
+                Zatím nemáte žádné produkty
+              </h3>
               <p className="text-xs text-zinc-400 max-w-xs mt-1.5 leading-relaxed">
-                Přejděte do nastavení kliknutím na ozubené kolečko v pravém horním rohu a přidejte své vlastní produkty a ceny.
+                Přejděte do nastavení kliknutím na ozubené kolečko v pravém
+                horním rohu a přidejte své vlastní produkty a ceny.
               </p>
               <button
                 onClick={() => setActiveScreen('settings')}
@@ -144,12 +135,15 @@ function App() {
                 onClick={() => handleAddToCart(product)}
                 className="bg-white border border-zinc-200/80 rounded-2xl p-5 flex flex-col justify-between items-start min-h-[110px] text-left hover:border-zinc-400 active:scale-[0.94] active:border-zinc-300 transition-all duration-150 cursor-pointer shadow-sm shadow-zinc-100/50 group"
               >
-                <span className="text-[15px] font-semibold text-zinc-900 leading-tight mt-1">{product.name}</span>
-                <span className="text-sm font-medium text-zinc-505 mt-2">{product.price.toLocaleString('cs-CZ')} Kč</span>
+                <span className="text-[15px] font-semibold text-zinc-900 leading-tight mt-1">
+                  {product.name}
+                </span>
+                <span className="text-sm font-medium text-zinc-500 mt-2 font-mono">
+                  {product.price.toLocaleString('cs-CZ')} Kč
+                </span>
               </button>
             ))
           )}
-
         </div>
       </main>
 
@@ -177,9 +171,10 @@ function App() {
           onConfirm={handleClearCart}
         />
       )}
-
     </div>
-  );
+  )
 }
 
-export default App;
+export default function App() {
+  return <PosApp />
+}

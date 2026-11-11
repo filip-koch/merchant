@@ -1,67 +1,97 @@
-import React, { useState, useEffect, useRef } from 'react';
-import QRCode from 'qrcode';
-import { AlertTriangle } from 'lucide-react';
-import { getCzechIban, generateSpaydString, triggerHaptic } from '../utils/paymentUtils.js';
+import { useState, useEffect, useRef, useCallback } from 'react'
+import QRCode from 'qrcode'
+import { AlertTriangle } from 'lucide-react'
+import {
+  getCzechIban,
+  generateSpaydString,
+  triggerHaptic,
+} from '../utils/paymentUtils.js'
 
-export default function PaymentModal({ type, amount, bankInfo, onClose, onConfirm }) {
-  const [timeLeft, setTimeLeft] = useState(10); // 10 seconds for cash
-  const [paymentSuccess, setPaymentSuccess] = useState(false);
-  const [finalAmount] = useState(amount); // Capture initial amount to prevent resetting to 0 when cart clears
-  const canvasRef = useRef(null);
-  const timerRef = useRef(null);
+export default function PaymentModal({
+  type,
+  amount,
+  bankInfo,
+  onClose,
+  onConfirm,
+}) {
+  const [timeLeft, setTimeLeft] = useState(10) // 10 seconds for cash
+  const [paymentSuccess, setPaymentSuccess] = useState(false)
+  const [finalAmount] = useState(amount) // Capture initial amount to prevent resetting to 0 when cart clears
+  const canvasRef = useRef(null)
+  const timerRef = useRef(null)
 
-  const iban = bankInfo.accountNumber && bankInfo.bankId
-    ? getCzechIban(bankInfo.accountNumber, bankInfo.bankId)
-    : '';
+  const iban =
+    bankInfo.accountNumber && bankInfo.bankId
+      ? getCzechIban(bankInfo.accountNumber, bankInfo.bankId)
+      : ''
 
-  const spaydString = iban ? generateSpaydString(iban, amount) : '';
+  const spaydString = iban ? generateSpaydString(iban, amount) : ''
+
+  const handleConfirm = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current)
+    setPaymentSuccess(true)
+    triggerHaptic([80, 50, 120])
+
+    // Fire confirmation event (resets cart)
+    onConfirm()
+
+    // Auto-close success modal after 2.5 seconds
+    setTimeout(() => {
+      onClose()
+    }, 2500)
+  }, [onConfirm, onClose])
+
+  const handleCancel = () => {
+    if (timerRef.current) clearInterval(timerRef.current)
+    onClose()
+  }
 
   // Handle status bar blending when modal is open
   useEffect(() => {
-    let meta = document.getElementById('dynamic-theme-color');
+    let meta = document.getElementById('dynamic-theme-color')
     if (!meta) {
-      meta = document.createElement('meta');
-      meta.id = 'dynamic-theme-color';
-      meta.name = 'theme-color';
-      document.head.appendChild(meta);
+      meta = document.createElement('meta')
+      meta.id = 'dynamic-theme-color'
+      meta.name = 'theme-color'
+      document.head.appendChild(meta)
     }
-    meta.content = '#b2b2b2';
-    document.documentElement.classList.add('modal-open');
-    document.body.classList.add('modal-open');
+    meta.content = '#b2b2b2'
+    document.documentElement.classList.add('modal-open')
+    document.body.classList.add('modal-open')
 
     return () => {
-      const currentMeta = document.getElementById('dynamic-theme-color');
+      const currentMeta = document.getElementById('dynamic-theme-color')
       if (currentMeta) {
-        currentMeta.content = '#ffffff';
+        currentMeta.content = '#ffffff'
       }
-      document.documentElement.classList.remove('modal-open');
-      document.body.classList.remove('modal-open');
-    };
-  }, []);
+      document.documentElement.classList.remove('modal-open')
+      document.body.classList.remove('modal-open')
+    }
+  }, [])
 
   // Handle Cash Countdown Timer
   useEffect(() => {
     if (type === 'cash' && !paymentSuccess) {
-      const startTime = Date.now();
-      const duration = 12000; // 10 seconds in ms
+      const startTime = Date.now()
+      const duration = 12000 // 10 seconds in ms
 
       timerRef.current = setInterval(() => {
-        const elapsed = Date.now() - startTime;
-        const remaining = Math.max(0, (duration - elapsed) / 1000);
+        const elapsed = Date.now() - startTime
+        const remaining = Math.max(0, (duration - elapsed) / 1000)
 
-        setTimeLeft(remaining);
+        setTimeLeft(remaining)
 
         if (remaining <= 0) {
-          clearInterval(timerRef.current);
-          handleConfirm();
+          clearInterval(timerRef.current)
+          handleConfirm()
         }
-      }, 50); // Update every 50ms for countdown progress
+      }, 50) // Update every 50ms for countdown progress
     }
 
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [type, paymentSuccess]);
+      if (timerRef.current) clearInterval(timerRef.current)
+    }
+  }, [type, paymentSuccess, handleConfirm])
 
   // Render QR Code
   useEffect(() => {
@@ -74,54 +104,54 @@ export default function PaymentModal({ type, amount, bankInfo, onClose, onConfir
           margin: 1,
           color: {
             dark: '#09090b', // Jet black
-            light: '#FFFFFF' // White background
+            light: '#FFFFFF', // White background
           },
-          errorCorrectionLevel: 'M'
+          errorCorrectionLevel: 'M',
         },
         (err) => {
           if (err) {
-            console.error('Chyba při generování QR kódu:', err);
+            console.error('Chyba při generování QR kódu:', err)
           }
         }
-      );
+      )
     }
-  }, [type, spaydString]);
-
-  const handleConfirm = () => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    setPaymentSuccess(true);
-    triggerHaptic([80, 50, 120]);
-
-    // Fire confirmation event (resets cart)
-    onConfirm();
-
-    // Auto-close success modal after 2.5 seconds
-    setTimeout(() => {
-      onClose();
-    }, 2500);
-  };
-
-  const handleCancel = () => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    onClose();
-  };
+  }, [type, spaydString])
 
   return (
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-[100] animate-fade-in select-none">
       <div className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl border border-zinc-100 animate-scale-in flex flex-col p-6 min-h-[380px]">
-
         {/* SUCCESS SCREEN STATE */}
         {paymentSuccess ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center py-6 animate-fade-in">
             <div className="flex items-center justify-center">
-              <svg className="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
-                <circle className="checkmark__circle" cx="26" cy="26" r="25" fill="none" />
-                <path className="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" />
+              <svg
+                className="checkmark"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 52 52"
+              >
+                <circle
+                  className="checkmark__circle"
+                  cx="26"
+                  cy="26"
+                  r="25"
+                  fill="none"
+                />
+                <path
+                  className="checkmark__check"
+                  fill="none"
+                  d="M14.1 27.2l7.1 7.2 16.7-16.8"
+                />
               </svg>
             </div>
-            <h2 className="text-xl font-bold text-zinc-900 mt-6">Platba dokončena!</h2>
-            <p className="text-xs text-zinc-400 mt-1">Transakce byla úspěšně zpracována.</p>
-            <p className="text-3xl font-black text-zinc-950 mt-5">{finalAmount.toLocaleString('cs-CZ')} Kč</p>
+            <h2 className="text-xl font-bold text-zinc-900 mt-6">
+              Platba dokončena!
+            </h2>
+            <p className="text-xs text-zinc-400 mt-1">
+              Transakce byla úspěšně zpracována.
+            </p>
+            <p className="text-3xl font-black text-zinc-950 mt-5">
+              {finalAmount.toLocaleString('cs-CZ')} Kč
+            </p>
             <button
               onClick={onClose}
               className="mt-8 bg-zinc-950 hover:bg-zinc-800 text-white font-semibold rounded-xl text-sm py-3 px-6 active:scale-95 transition-all w-full cursor-pointer"
@@ -139,8 +169,12 @@ export default function PaymentModal({ type, amount, bankInfo, onClose, onConfir
             </div>
 
             <div className="text-center py-6">
-              <span className="text-4xl font-black text-zinc-900 tracking-tight">{finalAmount.toLocaleString('cs-CZ')}</span>
-              <span className="text-base font-bold text-zinc-900 ml-1.5">Kč</span>
+              <span className="text-4xl font-black text-zinc-900 tracking-tight">
+                {finalAmount.toLocaleString('cs-CZ')}
+              </span>
+              <span className="text-base font-bold text-zinc-900 ml-1.5">
+                Kč
+              </span>
             </div>
 
             {/* CASH PAYMENT MODULE */}
@@ -153,7 +187,10 @@ export default function PaymentModal({ type, amount, bankInfo, onClose, onConfir
                   />
                 </div>
                 <p className="text-xs text-zinc-400">
-                  Automatické potvrzení za <strong className="text-zinc-800 font-semibold">{timeLeft.toFixed(1)}s</strong>
+                  Automatické potvrzení za{' '}
+                  <strong className="text-zinc-800 font-semibold">
+                    {timeLeft.toFixed(1)}s
+                  </strong>
                 </p>
               </div>
             )}
@@ -162,13 +199,19 @@ export default function PaymentModal({ type, amount, bankInfo, onClose, onConfir
             {type === 'qr' && (
               <div className="flex flex-col items-center justify-center mb-4">
                 {iban ? (
-                  <canvas ref={canvasRef} style={{ width: '180px', height: '180px' }} />
+                  <canvas
+                    ref={canvasRef}
+                    style={{ width: '180px', height: '180px' }}
+                  />
                 ) : (
                   <div className="text-center py-6 text-zinc-500 flex flex-col items-center">
                     <AlertTriangle size={28} className="text-amber-500 mb-2" />
-                    <p className="font-semibold text-xs text-zinc-800">Chybí bankovní spojení</p>
+                    <p className="font-semibold text-xs text-zinc-800">
+                      Chybí bankovní spojení
+                    </p>
                     <p className="text-[11px] mt-1 text-zinc-400 max-w-[200px] leading-normal">
-                      Pro generování QR kódů musíte nastavit číslo účtu (kolečko v záhlaví).
+                      Pro generování QR kódů musíte nastavit číslo účtu (kolečko
+                      v záhlaví).
                     </p>
                   </div>
                 )}
@@ -195,8 +238,7 @@ export default function PaymentModal({ type, amount, bankInfo, onClose, onConfir
             </div>
           </div>
         )}
-
       </div>
     </div>
-  );
+  )
 }
