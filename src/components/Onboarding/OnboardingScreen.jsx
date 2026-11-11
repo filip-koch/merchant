@@ -7,6 +7,8 @@ import {
   AlertCircle,
   Sparkles,
   ArrowRight,
+  Image as ImageIcon,
+  Trash2,
 } from 'lucide-react'
 import { useMerchant } from '../../context/useMerchant.js'
 import {
@@ -16,6 +18,7 @@ import {
   triggerHaptic,
 } from '../../utils/paymentUtils.js'
 import { validateBackupPayload } from '../../services/storage/schemaValidator.js'
+import { processAndSquareLogo } from '../../qr/index.js'
 
 export default function OnboardingScreen() {
   const { initializeInstance, importInstance } = useMerchant()
@@ -25,14 +28,42 @@ export default function OnboardingScreen() {
   const [shopName, setShopName] = useState('')
   const [accountNumber, setAccountNumber] = useState('')
   const [bankId, setBankId] = useState('')
+  const [logo, setLogo] = useState('')
+  const [isProcessingLogo, setIsProcessingLogo] = useState(false)
   const [createError, setCreateError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const logoInputRef = useRef(null)
 
   // Import state
   const [importFile, setImportFile] = useState(null)
   const [backupPreview, setBackupPreview] = useState(null)
   const [importError, setImportError] = useState('')
   const fileInputRef = useRef(null)
+
+  const handleLogoUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setIsProcessingLogo(true)
+    setCreateError('')
+    try {
+      triggerHaptic(15)
+      const squared = await processAndSquareLogo(file, 256)
+      setLogo(squared)
+    } catch (err) {
+      setCreateError(err.message || 'Nepodařilo se zpracovat logo.')
+    } finally {
+      setIsProcessingLogo(false)
+    }
+  }
+
+  const handleRemoveLogo = () => {
+    triggerHaptic([30, 20])
+    setLogo('')
+    if (logoInputRef.current) {
+      logoInputRef.current.value = ''
+    }
+  }
 
   const handleCreateSubmit = async (e) => {
     e.preventDefault()
@@ -67,6 +98,7 @@ export default function OnboardingScreen() {
         name: cleanName,
         accountNumber: cleanAccount,
         bankId: cleanBank,
+        logo,
       })
     } catch (err) {
       setCreateError(err.message || 'Nepodařilo se vytvořit instanci.')
@@ -108,6 +140,7 @@ export default function OnboardingScreen() {
             validation.backup.settings.accountNumber &&
             validation.backup.settings.bankId
           ),
+          hasLogo: Boolean(validation.backup.settings.logo),
           exportedAt: validation.backup.exportedAt,
         })
         triggerHaptic(20)
@@ -139,11 +172,15 @@ export default function OnboardingScreen() {
         <div className="text-center mb-6">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-900 text-white text-[10px] uppercase font-bold tracking-widest mb-3 shadow-sm">
             <Sparkles size={12} />
-            <span>Merchant</span>
+            <span>Merchant 2.0</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-900">
-            Nastavení pokladny
+            Nastavení vaší pokladny
           </h1>
+          <p className="text-xs text-zinc-500 mt-1.5 max-w-xs mx-auto leading-relaxed">
+            Rychlý a spolehlivý pokladní systém s offline podporou a českými QR
+            platbami.
+          </p>
         </div>
 
         {/* Tab switcher: Create vs Import */}
@@ -191,7 +228,7 @@ export default function OnboardingScreen() {
                 htmlFor="shopName"
                 className="text-xs font-bold text-zinc-500 uppercase tracking-wider"
               >
-                Název obchodu
+                Název obchodu / pokladny *
               </label>
               <input
                 id="shopName"
@@ -203,6 +240,58 @@ export default function OnboardingScreen() {
                 className="bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-zinc-800 focus:ring-1 focus:ring-zinc-800 font-semibold transition-all"
                 required
               />
+            </div>
+
+            {/* Optional Logo Upload in Onboarding */}
+            <div className="border-t border-zinc-100 pt-3 flex flex-col gap-2">
+              <label className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">
+                Logo do QR kódu (nepovinné)
+              </label>
+
+              <input
+                ref={logoInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                className="hidden"
+                onChange={handleLogoUpload}
+              />
+
+              {logo ? (
+                <div className="flex items-center gap-3 bg-zinc-50 border border-zinc-200 rounded-xl p-2.5">
+                  <img
+                    src={logo}
+                    alt="Logo preview"
+                    className="w-11 h-11 rounded-lg border border-zinc-200 object-cover bg-white"
+                  />
+                  <div className="flex-1 flex items-center justify-between">
+                    <span className="text-xs font-semibold text-zinc-800">
+                      Čtvercové logo připraveno
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleRemoveLogo}
+                      className="p-1 text-zinc-400 hover:text-red-600 transition-colors cursor-pointer"
+                      title="Odebrat logo"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => logoInputRef.current?.click()}
+                  disabled={isProcessingLogo}
+                  className="border border-dashed border-zinc-300 hover:border-zinc-400 bg-zinc-50/50 rounded-xl py-2.5 px-3 flex items-center justify-center gap-2 text-xs text-zinc-600 font-medium transition-all cursor-pointer"
+                >
+                  <ImageIcon size={14} className="text-zinc-400" />
+                  <span>
+                    {isProcessingLogo
+                      ? 'Zpracovávám...'
+                      : 'Přidat čtvercové logo (PNG, JPG, SVG)'}
+                  </span>
+                </button>
+              )}
             </div>
 
             {/* Bank credentials (Optional) */}
@@ -341,6 +430,14 @@ export default function OnboardingScreen() {
                         : 'Pouze hotovost'}
                     </span>
                   </div>
+                  {backupPreview.hasLogo && (
+                    <div>
+                      <span className="text-zinc-400">Logo:</span>{' '}
+                      <span className="text-emerald-700 font-semibold">
+                        Zahrnuto v záloze
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <button

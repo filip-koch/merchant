@@ -167,6 +167,8 @@ function PosApp() {
           type={paymentFlow.type}
           amount={cartTotal}
           bankInfo={bankInfo}
+          shopName={settings.businessName}
+          logo={settings.logo}
           onClose={() => setPaymentFlow({ isOpen: false, type: null })}
           onConfirm={handleClearCart}
         />

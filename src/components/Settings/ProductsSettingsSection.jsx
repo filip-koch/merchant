@@ -1,19 +1,41 @@
 import { useState } from 'react'
-import { Plus, Trash2, Code2 } from 'lucide-react'
+import { Plus, Trash2, Code2, Pencil, X, Check } from 'lucide-react'
 import { triggerHaptic } from '../../utils/paymentUtils.js'
 
 export default function ProductsSettingsSection({
   products,
   onAddProduct,
+  onUpdateProduct,
   onDeleteProduct,
 }) {
   const [newItemName, setNewItemName] = useState('')
   const [newItemPrice, setNewItemPrice] = useState('')
   const [newItemScript, setNewItemScript] = useState('')
   const [showScriptField, setShowScriptField] = useState(false)
+  const [editingProductId, setEditingProductId] = useState(null)
   const [error, setError] = useState('')
 
-  const handleAddSubmit = async (e) => {
+  const handleStartEdit = (product) => {
+    triggerHaptic(15)
+    setEditingProductId(product.id)
+    setNewItemName(product.name)
+    setNewItemPrice(String(product.price))
+    setNewItemScript(product.script || '')
+    setShowScriptField(Boolean(product.script))
+    setError('')
+  }
+
+  const handleCancelEdit = () => {
+    triggerHaptic(10)
+    setEditingProductId(null)
+    setNewItemName('')
+    setNewItemPrice('')
+    setNewItemScript('')
+    setShowScriptField(false)
+    setError('')
+  }
+
+  const handleFormSubmit = async (e) => {
     e.preventDefault()
     setError('')
 
@@ -31,11 +53,21 @@ export default function ProductsSettingsSection({
     }
 
     triggerHaptic(15)
-    await onAddProduct({
-      name,
-      price,
-      script: showScriptField ? newItemScript.trim() : '',
-    })
+
+    if (editingProductId && onUpdateProduct) {
+      await onUpdateProduct(editingProductId, {
+        name,
+        price,
+        script: showScriptField ? newItemScript.trim() : '',
+      })
+      setEditingProductId(null)
+    } else {
+      await onAddProduct({
+        name,
+        price,
+        script: showScriptField ? newItemScript.trim() : '',
+      })
+    }
 
     // Reset form
     setNewItemName('')
@@ -46,19 +78,34 @@ export default function ProductsSettingsSection({
 
   const handleDelete = async (id) => {
     triggerHaptic([30, 40, 30])
+    if (editingProductId === id) {
+      handleCancelEdit()
+    }
     await onDeleteProduct(id)
   }
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Form to add a new product */}
+      {/* Form to add or edit a product */}
       <form
-        onSubmit={handleAddSubmit}
+        onSubmit={handleFormSubmit}
         className="flex flex-col gap-4 bg-white border border-zinc-200 rounded-2xl p-5 shadow-sm shadow-zinc-100/50"
       >
-        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
-          Nový produkt
-        </span>
+        <div className="flex justify-between items-center">
+          <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+            {editingProductId ? 'Upravit produkt' : 'Nový produkt'}
+          </span>
+          {editingProductId && (
+            <button
+              type="button"
+              onClick={handleCancelEdit}
+              className="text-[11px] text-zinc-400 hover:text-zinc-600 flex items-center gap-1 cursor-pointer"
+            >
+              <X size={12} />
+              Zrušit úpravy
+            </button>
+          )}
+        </div>
 
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
           <div className="flex-1 flex flex-col gap-1.5">
@@ -154,7 +201,15 @@ export default function ProductsSettingsSection({
           type="submit"
           className="bg-zinc-950 hover:bg-zinc-800 text-white font-semibold py-3 px-4 rounded-xl text-xs transition-all active:scale-[0.98] cursor-pointer text-center flex items-center justify-center gap-1.5"
         >
-          <Plus size={14} strokeWidth={2.5} /> Přidat produkt
+          {editingProductId ? (
+            <>
+              <Check size={14} strokeWidth={2.5} /> Uložit úpravy
+            </>
+          ) : (
+            <>
+              <Plus size={14} strokeWidth={2.5} /> Přidat produkt
+            </>
+          )}
         </button>
       </form>
 
@@ -173,7 +228,11 @@ export default function ProductsSettingsSection({
             {products.map((product) => (
               <div
                 key={product.id}
-                className="flex justify-between items-center bg-white border border-zinc-200/80 rounded-xl p-3.5 shadow-sm shadow-zinc-100/50"
+                className={`flex justify-between items-center bg-white border rounded-xl p-3.5 shadow-sm transition-all ${
+                  editingProductId === product.id
+                    ? 'border-zinc-800 ring-1 ring-zinc-800 shadow-zinc-200'
+                    : 'border-zinc-200/80 shadow-zinc-100/50'
+                }`}
               >
                 <div className="flex flex-col pr-4">
                   <div className="flex items-center gap-2">
@@ -191,17 +250,25 @@ export default function ProductsSettingsSection({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <span className="text-xs font-bold text-zinc-900 font-mono">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-zinc-900 font-mono mr-1">
                     {product.price.toLocaleString('cs-CZ')} Kč
                   </span>
+                  <button
+                    type="button"
+                    onClick={() => handleStartEdit(product)}
+                    className="p-1.5 text-zinc-400 hover:text-zinc-800 transition-colors cursor-pointer active:scale-90"
+                    aria-label={`Upravit ${product.name}`}
+                  >
+                    <Pencil size={14} />
+                  </button>
                   <button
                     type="button"
                     onClick={() => handleDelete(product.id)}
                     className="p-1.5 text-zinc-400 hover:text-red-600 transition-colors cursor-pointer active:scale-90"
                     aria-label={`Smazat ${product.name}`}
                   >
-                    <Trash2 size={15} />
+                    <Trash2 size={14} />
                   </button>
                 </div>
               </div>

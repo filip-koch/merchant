@@ -1,41 +1,76 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
-import QRCode from 'qrcode'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { AlertTriangle } from 'lucide-react'
-import {
-  getCzechIban,
-  generateSpaydString,
-  triggerHaptic,
-} from '../utils/paymentUtils.js'
+import { triggerHaptic } from '../utils/paymentUtils.js'
+import { toSvg, czechAccountToIban } from '../qr/index.js'
 
 export default function PaymentModal({
   type,
   amount,
   bankInfo,
+  shopName = 'QR Platba',
+  logo = '',
   onClose,
   onConfirm,
 }) {
   const [timeLeft, setTimeLeft] = useState(10) // 10 seconds for cash
   const [paymentSuccess, setPaymentSuccess] = useState(false)
-  const [finalAmount] = useState(amount) // Capture initial amount to prevent resetting to 0 when cart clears
-  const canvasRef = useRef(null)
+  const [finalAmount] = useState(amount)
   const timerRef = useRef(null)
 
-  const iban =
-    bankInfo.accountNumber && bankInfo.bankId
-      ? getCzechIban(bankInfo.accountNumber, bankInfo.bankId)
-      : ''
+  // Resolve IBAN from bank credentials
+  const iban = useMemo(() => {
+    if (!bankInfo?.accountNumber || !bankInfo?.bankId) return ''
+    try {
+      return czechAccountToIban(`${bankInfo.accountNumber}/${bankInfo.bankId}`)
+    } catch {
+      return ''
+    }
+  }, [bankInfo])
 
-  const spaydString = iban ? generateSpaydString(iban, amount) : ''
+  // Generate SVG QR Code with CBA frame, scaled shop name, and optional logo
+  const qrSvg = useMemo(() => {
+    if (type !== 'qr' || !iban) return ''
+
+    try {
+      return toSvg({
+        iban,
+        amount,
+        currency: 'CZK',
+        businessName: shopName || 'QR Platba',
+        message: `${shopName || 'POS'} Platba`,
+        size: 320,
+        margin: 24,
+        logo: logo
+          ? {
+              src: logo,
+              background: '#ffffff',
+              backgroundShape: 'rounded-rect',
+              size: 0.22,
+            }
+          : null,
+        frame: {
+          show: true,
+          text: shopName || 'QR Platba',
+          color: '#09090b',
+          textColor: '#09090b',
+        },
+        qr: {
+          color: { dark: '#09090b' },
+        },
+      })
+    } catch (err) {
+      console.error('Chyba při generování QR SVG:', err)
+      return ''
+    }
+  }, [type, iban, amount, shopName, logo])
 
   const handleConfirm = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current)
     setPaymentSuccess(true)
     triggerHaptic([80, 50, 120])
 
-    // Fire confirmation event (resets cart)
     onConfirm()
 
-    // Auto-close success modal after 2.5 seconds
     setTimeout(() => {
       onClose()
     }, 2500)
@@ -85,37 +120,13 @@ export default function PaymentModal({
           clearInterval(timerRef.current)
           handleConfirm()
         }
-      }, 50) // Update every 50ms for countdown progress
+      }, 50)
     }
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current)
     }
   }, [type, paymentSuccess, handleConfirm])
-
-  // Render QR Code
-  useEffect(() => {
-    if (type === 'qr' && canvasRef.current && spaydString) {
-      QRCode.toCanvas(
-        canvasRef.current,
-        spaydString,
-        {
-          width: 180,
-          margin: 1,
-          color: {
-            dark: '#09090b', // Jet black
-            light: '#FFFFFF', // White background
-          },
-          errorCorrectionLevel: 'M',
-        },
-        (err) => {
-          if (err) {
-            console.error('Chyba při generování QR kódu:', err)
-          }
-        }
-      )
-    }
-  }, [type, spaydString])
 
   return (
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-[100] animate-fade-in select-none">
@@ -168,8 +179,8 @@ export default function PaymentModal({
               </h3>
             </div>
 
-            <div className="text-center py-6">
-              <span className="text-4xl font-black text-zinc-900 tracking-tight">
+            <div className="text-center py-4">
+              <span className="text-4xl font-black text-zinc-900 tracking-tight font-mono">
                 {finalAmount.toLocaleString('cs-CZ')}
               </span>
               <span className="text-base font-bold text-zinc-900 ml-1.5">
@@ -195,13 +206,13 @@ export default function PaymentModal({
               </div>
             )}
 
-            {/* QR PAYMENT MODULE */}
+            {/* QR PAYMENT MODULE (USING SVG FROM SRC/QR) */}
             {type === 'qr' && (
-              <div className="flex flex-col items-center justify-center mb-4">
-                {iban ? (
-                  <canvas
-                    ref={canvasRef}
-                    style={{ width: '180px', height: '180px' }}
+              <div className="flex flex-col items-center justify-center mb-3">
+                {iban && qrSvg ? (
+                  <div
+                    className="w-[210px] h-[210px] flex items-center justify-center rounded-2xl bg-white shadow-sm border border-zinc-100 p-0.5 animate-scale-in"
+                    dangerouslySetInnerHTML={{ __html: qrSvg }}
                   />
                 ) : (
                   <div className="text-center py-6 text-zinc-500 flex flex-col items-center">
@@ -230,7 +241,7 @@ export default function PaymentModal({
               {(type === 'cash' || iban) && (
                 <button
                   onClick={handleConfirm}
-                  className="flex-1 py-3 bg-zinc-950 hover:bg-zinc-800 text-white font-semibold rounded-xl text-xs transition-all cursor-pointer active:scale-95 text-center"
+                  className="flex-1 py-3 bg-zinc-950 hover:bg-zinc-800 text-white font-semibold rounded-xl text-xs transition-all cursor-pointer active:scale-95 text-center shadow-sm"
                 >
                   {type === 'cash' ? 'Potvrdit' : 'Potvrdit přijetí'}
                 </button>

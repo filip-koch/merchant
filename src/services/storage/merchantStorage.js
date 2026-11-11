@@ -120,6 +120,7 @@ export async function loadMerchantData() {
     businessName: 'Pokladna',
     accountNumber: '',
     bankId: '',
+    logo: '',
     currency: 'CZK',
   }
 
@@ -147,6 +148,7 @@ export async function initializeMerchantInstance({
   name,
   accountNumber = '',
   bankId = '',
+  logo = '',
   includeSampleProducts = false,
 }) {
   const cleanName = (name || '').trim() || 'Moje Pokladna'
@@ -155,6 +157,7 @@ export async function initializeMerchantInstance({
     businessName: cleanName,
     accountNumber,
     bankId,
+    logo,
   })
 
   if (!settingsValidation.valid) {

@@ -91,12 +91,21 @@ export function validateSettings(settings) {
     }
   }
 
+  let logo = ''
+  if (typeof raw.logo === 'string') {
+    const trimmed = raw.logo.trim()
+    if (trimmed.startsWith('data:image/') && trimmed.length <= 600000) {
+      logo = trimmed
+    }
+  }
+
   return {
     valid: true,
     settings: {
       businessName,
       accountNumber,
       bankId,
+      logo,
       currency: 'CZK',
     },
   }

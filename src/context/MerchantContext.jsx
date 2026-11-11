@@ -20,6 +20,7 @@ export function MerchantProvider({ children }) {
     businessName: 'Pokladna',
     accountNumber: '',
     bankId: '',
+    logo: '',
     currency: 'CZK',
   })
   const [products, setProducts] = useState([])
@@ -174,6 +175,7 @@ export function MerchantProvider({ children }) {
         businessName: 'Pokladna',
         accountNumber: '',
         bankId: '',
+        logo: '',
         currency: 'CZK',
       })
       setProducts([])
