@@ -1,5 +1,11 @@
 import { useState, useRef } from 'react'
-import { Info, Check, Image as ImageIcon, Trash2 } from 'lucide-react'
+import {
+  Info,
+  Check,
+  Image as ImageIcon,
+  Trash2,
+  AlertCircle,
+} from 'lucide-react'
 import {
   validateCzechAccount,
   validateBankId,
@@ -237,6 +243,17 @@ export default function GeneralSettingsSection({ settings, onSave }) {
                 </option>
               ))}
             </select>
+          </div>
+
+          <div className="flex items-start gap-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 mt-1 text-amber-900">
+            <AlertCircle size={15} className="text-amber-600 shrink-0 mt-0.5" />
+            <p className="text-[11px] leading-relaxed text-amber-800">
+              <strong className="font-semibold text-amber-900">
+                Důležité:
+              </strong>{' '}
+              Před použitím v reálném provozu nejprve vyzkoušejte cvičnou QR
+              platbu (např. 1 Kč) a ověřte, že peníze dorazí na váš účet.
+            </p>
           </div>
         </div>
 

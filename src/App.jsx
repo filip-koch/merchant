@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Settings, ShoppingBag, Sparkles } from 'lucide-react'
+import { Settings, ShoppingBag } from 'lucide-react'
 import { useMerchant } from './context/useMerchant.js'
 import SettingsScreen from './components/SettingsScreen.jsx'
 import CartDrawer from './components/CartDrawer.jsx'
@@ -69,11 +69,11 @@ function PosApp() {
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center h-[100dvh] bg-zinc-50 select-none">
-        <div className="w-10 h-10 rounded-2xl bg-zinc-950 flex items-center justify-center shadow-md animate-pop">
-          <Sparkles size={20} className="text-white" />
+        <div className="w-10 h-10 rounded-xl bg-black flex items-center justify-center shadow-md animate-pop text-white font-black text-lg select-none">
+          M
         </div>
         <span className="text-xs font-bold text-zinc-500 mt-4 tracking-wider uppercase">
-          Merchant 2.0
+          Merchant
         </span>
       </div>
     )
@@ -88,7 +88,10 @@ function PosApp() {
     <div className="flex flex-col h-[100dvh] overflow-hidden bg-zinc-50 select-none">
       {/* HEADER SECTION */}
       <header className="flex justify-between items-center bg-white border-b border-zinc-100 px-6 py-4 safe-top z-10 shrink-0">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-black flex items-center justify-center text-white font-black text-sm select-none shadow-sm">
+            M
+          </div>
           <span className="text-xl font-bold tracking-tight text-zinc-900">
             {settings.businessName || 'Pokladna'}
           </span>

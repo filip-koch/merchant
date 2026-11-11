@@ -5,7 +5,6 @@ import {
   CheckCircle2,
   FileText,
   AlertCircle,
-  Sparkles,
   ArrowRight,
   Image as ImageIcon,
   Trash2,
@@ -168,19 +167,14 @@ export default function OnboardingScreen() {
   return (
     <div className="min-h-[100dvh] bg-zinc-50 flex flex-col justify-between select-none safe-top safe-bottom p-5 sm:p-8">
       <div className="max-w-md w-full mx-auto flex-1 flex flex-col justify-center">
-        {/* Brand Eyebrow & Headline */}
+        {/* Brand Logo & Headline */}
         <div className="text-center mb-6">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-900 text-white text-[10px] uppercase font-bold tracking-widest mb-3 shadow-sm">
-            <Sparkles size={12} />
-            <span>Merchant 2.0</span>
+          <div className="w-12 h-12 rounded-xl bg-black mx-auto flex items-center justify-center text-white font-black text-xl mb-3 shadow-sm select-none">
+            M
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-900">
             Nastavení vaší pokladny
           </h1>
-          <p className="text-xs text-zinc-500 mt-1.5 max-w-xs mx-auto leading-relaxed">
-            Rychlý a spolehlivý pokladní systém s offline podporou a českými QR
-            platbami.
-          </p>
         </div>
 
         {/* Tab switcher: Create vs Import */}
@@ -348,6 +342,20 @@ export default function OnboardingScreen() {
                       </option>
                     ))}
                   </select>
+                </div>
+
+                <div className="flex items-start gap-2 bg-amber-500/10 border border-amber-500/20 rounded-xl p-2.5 text-amber-900 mt-1">
+                  <AlertCircle
+                    size={14}
+                    className="text-amber-600 shrink-0 mt-0.5"
+                  />
+                  <p className="text-[11px] leading-relaxed text-amber-800">
+                    <strong className="font-semibold text-amber-900">
+                      Důležité:
+                    </strong>{' '}
+                    Před použitím v reálném provozu nejprve ověřte funkčnost
+                    testovací platbou (např. 1 Kč).
+                  </p>
                 </div>
               </div>
             </div>
