@@ -1,11 +1,5 @@
 import { useState, useRef } from 'react'
-import {
-  Info,
-  Check,
-  Image as ImageIcon,
-  Trash2,
-  AlertCircle,
-} from 'lucide-react'
+import { Check, Image as ImageIcon, Trash2 } from 'lucide-react'
 import {
   validateCzechAccount,
   validateBankId,
@@ -90,41 +84,37 @@ export default function GeneralSettingsSection({ settings, onSave }) {
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex gap-3 bg-zinc-100/50 border border-zinc-200/50 p-4 rounded-2xl">
-        <Info size={16} className="text-zinc-500 shrink-0 mt-0.5" />
-        <p className="text-xs leading-relaxed text-zinc-500">
-          Zadejte název pokladny a volitelné bankovní údaje pro příjem plateb
-          přes QR kód.
-        </p>
-      </div>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      {/* CARD 1: Identity & Name */}
+      <div className="bg-white border border-zinc-200/80 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col gap-4">
+        <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+          Základní údaje
+        </h3>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        {/* Business Name */}
         <div className="flex flex-col gap-1.5">
           <label
             htmlFor="settingBusinessName"
-            className="text-xs font-bold text-zinc-400 uppercase tracking-wider"
+            className="text-xs font-medium text-zinc-700"
           >
-            Název pokladny (Záhlaví & Text QR rámečku)
+            Název stánku / pokladny
           </label>
           <input
             id="settingBusinessName"
             type="text"
-            placeholder="Např. Kavárna"
+            placeholder="např. Náš stánek"
             value={businessName}
             onChange={(e) => setBusinessName(e.target.value)}
-            className="bg-white border border-zinc-200 rounded-xl px-4 py-3 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-zinc-800 focus:ring-1 focus:ring-zinc-800 transition-all font-semibold"
+            className="bg-zinc-50/50 border border-zinc-200 rounded-xl px-3.5 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-zinc-900 transition-all font-medium"
           />
-          <span className="text-[10px] text-zinc-400 mt-0.5">
-            Tento název se automaticky zobrazí a naškáluje v rámečku QR kódu.
+          <span className="text-[11px] text-zinc-400">
+            Zobrazuje se v záhlaví a v rámečku vygenerovaného QR kódu.
           </span>
         </div>
 
-        {/* Logo Upload Section */}
-        <div className="flex flex-col gap-2 border-t border-zinc-100 pt-3">
-          <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
-            Logo pokladny pro QR kód (volitelné)
+        {/* Logo Section */}
+        <div className="flex flex-col gap-2 pt-2 border-t border-zinc-100">
+          <label className="text-xs font-medium text-zinc-700">
+            Logo pokladny (volitelné)
           </label>
 
           <input
@@ -136,36 +126,37 @@ export default function GeneralSettingsSection({ settings, onSave }) {
           />
 
           {logo ? (
-            <div className="flex items-center gap-3 bg-white border border-zinc-200/90 rounded-2xl p-3 shadow-sm">
+            <div className="flex items-center gap-3 bg-zinc-50/60 border border-zinc-200/80 rounded-xl p-3">
               <img
                 src={logo}
                 alt="Logo náhled"
-                className="w-14 h-14 rounded-xl border border-zinc-200/70 object-cover bg-white shadow-sm shrink-0"
+                className="w-12 h-12 rounded-lg border border-zinc-200 object-cover bg-white shrink-0"
               />
-              <div className="flex-1 flex flex-col justify-center gap-1">
-                <span className="text-xs font-bold text-zinc-800">
-                  Logo je aktivní
+              <div className="flex-1 min-w-0">
+                <span className="text-xs font-semibold text-zinc-800 block">
+                  Aktivní logo
                 </span>
-                <span className="text-[10px] text-zinc-400">
-                  Čtvercový formát 1:1, zobrazeno ve středu QR kódu.
+                <span className="text-[11px] text-zinc-400 block truncate">
+                  Zobrazí se ve středu QR kódu
                 </span>
-                <div className="flex gap-2 mt-1">
-                  <button
-                    type="button"
-                    onClick={() => logoInputRef.current?.click()}
-                    className="text-[11px] font-semibold text-zinc-700 hover:text-zinc-950 underline cursor-pointer"
-                  >
-                    Změnit
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleRemoveLogo}
-                    className="text-[11px] font-semibold text-red-600 hover:text-red-800 flex items-center gap-1 cursor-pointer ml-2"
-                  >
-                    <Trash2 size={12} />
-                    Odstranit
-                  </button>
-                </div>
+              </div>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => logoInputRef.current?.click()}
+                  className="text-xs font-medium text-zinc-600 hover:text-zinc-900 px-2 py-1 rounded-md hover:bg-zinc-100 cursor-pointer"
+                >
+                  Změnit
+                </button>
+                <button
+                  type="button"
+                  onClick={handleRemoveLogo}
+                  className="p-1 text-zinc-400 hover:text-rose-600 rounded-md hover:bg-rose-50 cursor-pointer"
+                  title="Odstranit logo"
+                  aria-label="Odstranit logo"
+                >
+                  <Trash2 size={14} />
+                </button>
               </div>
             </div>
           ) : (
@@ -173,52 +164,47 @@ export default function GeneralSettingsSection({ settings, onSave }) {
               type="button"
               onClick={() => logoInputRef.current?.click()}
               disabled={isProcessingLogo}
-              className="border border-dashed border-zinc-300 hover:border-zinc-400 bg-white hover:bg-zinc-50 rounded-2xl p-4 flex items-center justify-center gap-2.5 text-xs text-zinc-600 font-semibold transition-all cursor-pointer shadow-sm group"
+              className="border border-dashed border-zinc-200 hover:border-zinc-300 bg-zinc-50/50 hover:bg-zinc-50 rounded-xl p-3.5 flex items-center justify-center gap-2 text-xs text-zinc-600 font-medium transition-colors cursor-pointer"
             >
-              <div className="w-8 h-8 rounded-lg bg-zinc-100 group-hover:bg-zinc-200 flex items-center justify-center text-zinc-500 transition-colors">
-                <ImageIcon size={16} />
-              </div>
+              <ImageIcon size={15} className="text-zinc-400" />
               <span>
-                {isProcessingLogo
-                  ? 'Zpracovávám obrázek...'
-                  : 'Nahrát logo (PNG, JPG, SVG, WebP)'}
+                {isProcessingLogo ? 'Zpracovávám...' : 'Nahrát logo pro QR kód'}
               </span>
             </button>
           )}
-          <span className="text-[10px] text-zinc-400">
-            Nahraný obrázek je automaticky oříznut na čtverec a optimalizován
-            pro QR kód.
-          </span>
         </div>
+      </div>
 
-        {/* Bank Credentials */}
-        <div className="flex flex-col gap-1.5 border-t border-zinc-100 pt-3">
+      {/* CARD 2: Bank & QR settings */}
+      <div className="bg-white border border-zinc-200/80 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col gap-4">
+        <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+          Bankovní účet pro QR platby
+        </h3>
+
+        <div className="flex flex-col gap-1.5">
           <label
             htmlFor="settingAccountNumber"
-            className="text-xs font-bold text-zinc-400 uppercase tracking-wider"
+            className="text-xs font-medium text-zinc-700"
           >
-            Číslo účtu (nepovinné)
+            Číslo účtu
           </label>
           <input
             id="settingAccountNumber"
             type="text"
             inputMode="decimal"
-            placeholder="Např. 19-1234567890"
+            placeholder="např. 19-1234567890"
             value={accountNumber}
             onChange={(e) => setAccountNumber(e.target.value)}
-            className="bg-white border border-zinc-200 rounded-xl px-4 py-3 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-zinc-800 focus:ring-1 focus:ring-zinc-800 font-mono transition-all"
+            className="bg-zinc-50/50 border border-zinc-200 rounded-xl px-3.5 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-zinc-900 font-mono transition-all"
           />
-          <span className="text-[10px] text-zinc-400 mt-0.5 leading-normal">
-            Formát: [předčíslí-]číslo_účtu (pouze číslice a pomlčka)
-          </span>
         </div>
 
         <div className="flex flex-col gap-1.5">
           <label
             htmlFor="settingBankId"
-            className="text-xs font-bold text-zinc-400 uppercase tracking-wider"
+            className="text-xs font-medium text-zinc-700"
           >
-            Kód banky (4 číslice)
+            Kód banky
           </label>
           <div className="flex gap-2">
             <input
@@ -229,14 +215,14 @@ export default function GeneralSettingsSection({ settings, onSave }) {
               placeholder="0800"
               value={bankId}
               onChange={(e) => setBankId(e.target.value)}
-              className="w-24 bg-white border border-zinc-200 rounded-xl px-3 py-3 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-zinc-800 focus:ring-1 focus:ring-zinc-800 font-mono transition-all"
+              className="w-20 bg-zinc-50/50 border border-zinc-200 rounded-xl px-3 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-zinc-900 font-mono transition-all"
             />
             <select
               value={bankId}
               onChange={(e) => setBankId(e.target.value)}
-              className="flex-1 bg-white border border-zinc-200 rounded-xl px-3 py-3 text-xs text-zinc-700 focus:outline-none focus:border-zinc-800 transition-all cursor-pointer truncate"
+              className="flex-1 bg-zinc-50/50 border border-zinc-200 rounded-xl px-3 py-2.5 text-xs text-zinc-700 focus:outline-none focus:border-zinc-900 transition-all cursor-pointer truncate"
             >
-              <option value="">Rychlý výběr banky...</option>
+              <option value="">Vyberte banku ze seznamu...</option>
               {CZECH_BANKS.map((b) => (
                 <option key={b.code} value={b.code}>
                   {b.name} ({b.code})
@@ -244,39 +230,32 @@ export default function GeneralSettingsSection({ settings, onSave }) {
               ))}
             </select>
           </div>
-
-          <div className="flex items-start gap-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 mt-1 text-amber-900">
-            <AlertCircle size={15} className="text-amber-600 shrink-0 mt-0.5" />
-            <p className="text-[11px] leading-relaxed text-amber-800">
-              <strong className="font-semibold text-amber-900">
-                Důležité:
-              </strong>{' '}
-              Před použitím v reálném provozu nejprve vyzkoušejte cvičnou QR
-              platbu (např. 1 Kč) a ověřte, že peníze dorazí na váš účet.
-            </p>
-          </div>
+          <span className="text-[11px] text-zinc-400 mt-1">
+            Doporučení: Před spuštěním prodeje vyzkoušejte cvičnou QR platbu
+            (např. 1 Kč).
+          </span>
         </div>
+      </div>
 
-        {error && (
-          <div className="bg-red-50 border border-red-100 text-red-800 rounded-xl px-4 py-3 text-xs leading-relaxed">
-            {error}
-          </div>
-        )}
+      {error && (
+        <div className="bg-rose-50 border border-rose-200 text-rose-700 rounded-xl px-3.5 py-2.5 text-xs font-medium">
+          {error}
+        </div>
+      )}
 
-        {success && (
-          <div className="bg-emerald-50 border border-emerald-100 text-emerald-800 rounded-xl px-4 py-3 text-xs font-semibold text-center flex items-center justify-center gap-1.5">
-            <Check size={14} />
-            Nastavení bylo úspěšně uloženo!
-          </div>
-        )}
+      {success && (
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-center flex items-center justify-center gap-1.5">
+          <Check size={14} />
+          <span>Nastavení bylo uloženo</span>
+        </div>
+      )}
 
-        <button
-          type="submit"
-          className="bg-zinc-950 hover:bg-zinc-800 text-white font-semibold py-3.5 px-4 rounded-xl text-sm transition-all active:scale-[0.98] cursor-pointer text-center w-full mt-2"
-        >
-          Uložit změny
-        </button>
-      </form>
-    </div>
+      <button
+        type="submit"
+        className="bg-zinc-900 hover:bg-zinc-800 text-white font-semibold py-3 px-4 rounded-xl text-sm transition-all active:scale-[0.98] cursor-pointer text-center w-full"
+      >
+        Uložit změny
+      </button>
+    </form>
   )
 }

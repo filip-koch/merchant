@@ -85,84 +85,75 @@ export default function ProductsSettingsSection({
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       {/* Form to add or edit a product */}
       <form
         onSubmit={handleFormSubmit}
-        className="flex flex-col gap-4 bg-white border border-zinc-200 rounded-2xl p-5 shadow-sm shadow-zinc-100/50"
+        className="bg-white border border-zinc-200/80 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col gap-3.5"
       >
         <div className="flex justify-between items-center">
-          <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
-            {editingProductId ? 'Upravit produkt' : 'Nový produkt'}
-          </span>
+          <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+            {editingProductId ? 'Upravit produkt' : 'Přidat nový produkt'}
+          </h3>
           {editingProductId && (
             <button
               type="button"
               onClick={handleCancelEdit}
-              className="text-[11px] text-zinc-400 hover:text-zinc-600 flex items-center gap-1 cursor-pointer"
+              className="text-xs text-zinc-500 hover:text-zinc-900 flex items-center gap-1 cursor-pointer font-medium"
             >
-              <X size={12} />
-              Zrušit úpravy
+              <X size={13} />
+              Zrušit
             </button>
           )}
         </div>
 
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <div className="flex-1 flex flex-col gap-1.5">
-            <label className="text-[11px] font-semibold text-zinc-500 uppercase">
-              Název
-            </label>
+            <label className="text-xs font-medium text-zinc-700">Název</label>
             <input
               type="text"
-              placeholder="Např. Káva Cappuccino"
+              placeholder="např. Výrobek"
               value={newItemName}
               onChange={(e) => setNewItemName(e.target.value)}
-              className="bg-zinc-50/50 border border-zinc-200 rounded-xl px-4 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-zinc-800 focus:ring-1 focus:ring-zinc-800 transition-all font-medium"
+              className="bg-zinc-50/50 border border-zinc-200 rounded-xl px-3.5 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-zinc-900 transition-all font-medium"
               required
             />
           </div>
 
-          <div className="sm:w-36 flex flex-col gap-1.5">
-            <label className="text-[11px] font-semibold text-zinc-500 uppercase">
+          <div className="sm:w-32 flex flex-col gap-1.5">
+            <label className="text-xs font-medium text-zinc-700">
               Cena (Kč)
             </label>
             <input
               type="number"
               inputMode="decimal"
-              placeholder="Např. 85"
+              placeholder="např. 85"
               value={newItemPrice}
               onChange={(e) => setNewItemPrice(e.target.value)}
-              className="bg-zinc-50/50 border border-zinc-200 rounded-xl px-4 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-zinc-800 focus:ring-1 focus:ring-zinc-800 transition-all font-medium"
+              className="bg-zinc-50/50 border border-zinc-200 rounded-xl px-3.5 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-zinc-900 font-mono transition-all font-medium"
               required
             />
           </div>
         </div>
 
         {/* Script section */}
-        <div className="border-t border-zinc-100 pt-3 flex flex-col gap-2.5">
-          <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-zinc-500 select-none">
+        <div className="border-t border-zinc-100 pt-2 flex flex-col gap-2">
+          <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-zinc-600 select-none">
             <input
               type="checkbox"
               checked={showScriptField}
               onChange={(e) => setShowScriptField(e.target.checked)}
               className="w-4 h-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900 cursor-pointer"
             />
-            <span>Aktivovat pokročilé chování (skript)</span>
+            <span>Speciální pravidlo ceny (skript)</span>
           </label>
 
           {showScriptField && (
-            <div className="flex flex-col gap-2 animate-fade-in">
-              <span className="text-[10px] text-zinc-400 leading-normal">
-                Napište JavaScript kód vracející celkovou cenu. K dispozici jsou
-                proměnné{' '}
-                <code className="bg-zinc-100 px-1 rounded text-zinc-700 font-mono">
-                  quantity
-                </code>{' '}
-                a{' '}
-                <code className="bg-zinc-100 px-1 rounded text-zinc-700 font-mono">
-                  price
-                </code>
-                .
+            <div className="flex flex-col gap-2 mt-1 animate-fade-in">
+              <span className="text-[11px] text-zinc-400 leading-normal">
+                JavaScript vracející celkovou cenu z proměnných{' '}
+                <code className="text-zinc-600 font-mono">quantity</code> a{' '}
+                <code className="text-zinc-600 font-mono">price</code>.
               </span>
 
               <textarea
@@ -170,36 +161,34 @@ export default function ProductsSettingsSection({
                 rows={2}
                 value={newItemScript}
                 onChange={(e) => setNewItemScript(e.target.value)}
-                className="bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-2.5 text-xs font-mono text-zinc-800 placeholder-zinc-400 focus:outline-none focus:border-zinc-800 focus:ring-1 focus:ring-zinc-800 transition-all w-full"
+                className="bg-zinc-50 border border-zinc-200 rounded-xl px-3.5 py-2 text-xs font-mono text-zinc-800 placeholder-zinc-400 focus:outline-none focus:border-zinc-900 transition-all w-full"
               />
 
-              <div className="flex flex-wrap gap-1.5 mt-0.5">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setNewItemScript(
-                      'return (Math.floor(quantity / 3) * 2 + (quantity % 3)) * price;'
-                    )
-                  }
-                  className="text-[10px] bg-zinc-100 hover:bg-zinc-200 text-zinc-700 font-semibold px-2 py-1.5 rounded-lg active:scale-95 transition-all cursor-pointer flex items-center gap-1"
-                >
-                  <Code2 size={11} />
-                  Šablona: 3 za cenu 2 (2+1 zdarma)
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  setNewItemScript(
+                    'return (Math.floor(quantity / 3) * 2 + (quantity % 3)) * price;'
+                  )
+                }
+                className="text-[11px] bg-zinc-100 hover:bg-zinc-200/70 text-zinc-700 font-medium px-2.5 py-1.5 rounded-lg active:scale-95 transition-all cursor-pointer self-start flex items-center gap-1"
+              >
+                <Code2 size={12} />
+                Šablona: Akce 2+1 zdarma
+              </button>
             </div>
           )}
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-100 text-red-800 rounded-xl px-3 py-2 text-xs">
+          <div className="bg-rose-50 border border-rose-200 text-rose-700 rounded-xl px-3.5 py-2 text-xs font-medium">
             {error}
           </div>
         )}
 
         <button
           type="submit"
-          className="bg-zinc-950 hover:bg-zinc-800 text-white font-semibold py-3 px-4 rounded-xl text-xs transition-all active:scale-[0.98] cursor-pointer text-center flex items-center justify-center gap-1.5"
+          className="bg-zinc-900 hover:bg-zinc-800 text-white font-semibold py-2.5 px-4 rounded-xl text-xs transition-all active:scale-[0.98] cursor-pointer text-center flex items-center justify-center gap-1.5"
         >
           {editingProductId ? (
             <>
@@ -214,61 +203,57 @@ export default function ProductsSettingsSection({
       </form>
 
       {/* List of stored custom products */}
-      <div className="flex flex-col gap-2.5">
-        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
-          Aktuální nabídka ({products.length})
-        </span>
+      <div>
+        <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2 px-1">
+          Aktuální položky ({products.length})
+        </h3>
 
         {products.length === 0 ? (
-          <p className="text-xs text-zinc-400 italic text-center py-8 border border-dashed border-zinc-200 rounded-2xl bg-white shadow-sm shadow-zinc-100/50">
-            V nabídce nejsou žádné produkty. Přidejte je pomocí formuláře výše.
-          </p>
+          <div className="py-8 px-4 text-center rounded-2xl bg-white border border-zinc-200/80 text-xs text-zinc-400">
+            V nabídce zatím nejsou žádné produkty. Přidejte první produkt
+            formulářem výše.
+          </div>
         ) : (
-          <div className="flex flex-col gap-2 max-h-[360px] overflow-y-auto custom-scrollbar pr-1">
+          <div className="bg-white rounded-2xl border border-zinc-200/80 divide-y divide-zinc-100 overflow-hidden shadow-xs">
             {products.map((product) => (
               <div
                 key={product.id}
-                className={`flex justify-between items-center bg-white border rounded-xl p-3.5 shadow-sm transition-all ${
+                className={`flex justify-between items-center p-3.5 transition-colors ${
                   editingProductId === product.id
-                    ? 'border-zinc-800 ring-1 ring-zinc-800 shadow-zinc-200'
-                    : 'border-zinc-200/80 shadow-zinc-100/50'
+                    ? 'bg-zinc-100/70'
+                    : 'hover:bg-zinc-50/70'
                 }`}
               >
-                <div className="flex flex-col pr-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-zinc-800 leading-snug">
-                      {product.name}
+                <div className="flex items-center gap-2 min-w-0 pr-3">
+                  <span className="text-sm font-semibold text-zinc-900 truncate">
+                    {product.name}
+                  </span>
+                  {product.script && (
+                    <span className="bg-zinc-100 text-zinc-500 text-[10px] font-medium px-1.5 py-0.5 rounded">
+                      skript
                     </span>
-                    {product.script && (
-                      <span
-                        className="bg-zinc-100 border border-zinc-200 text-zinc-600 text-[8px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider select-none shrink-0"
-                        title="Obsahuje speciální chování výpočtu"
-                      >
-                        Skript
-                      </span>
-                    )}
-                  </div>
+                  )}
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-zinc-900 font-mono mr-1">
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-sm font-semibold text-zinc-900 font-mono mr-1">
                     {product.price.toLocaleString('cs-CZ')} Kč
                   </span>
                   <button
                     type="button"
                     onClick={() => handleStartEdit(product)}
-                    className="p-1.5 text-zinc-400 hover:text-zinc-800 transition-colors cursor-pointer active:scale-90"
+                    className="p-1.5 text-zinc-400 hover:text-zinc-800 rounded-lg hover:bg-zinc-100 transition-colors cursor-pointer"
                     aria-label={`Upravit ${product.name}`}
                   >
-                    <Pencil size={14} />
+                    <Pencil size={15} />
                   </button>
                   <button
                     type="button"
                     onClick={() => handleDelete(product.id)}
-                    className="p-1.5 text-zinc-400 hover:text-red-600 transition-colors cursor-pointer active:scale-90"
+                    className="p-1.5 text-zinc-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
                     aria-label={`Smazat ${product.name}`}
                   >
-                    <Trash2 size={14} />
+                    <Trash2 size={15} />
                   </button>
                 </div>
               </div>

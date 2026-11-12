@@ -15,6 +15,9 @@ import {
 import {
   validateSettings,
   validateProduct,
+  validateEvent,
+  validateExpense,
+  validateSale,
   validateBackupPayload,
 } from './schemaValidator.js'
 
@@ -22,17 +25,19 @@ const KEYS = {
   INSTANCE: 'merchant_instance',
   SETTINGS: 'merchant_settings',
   PRODUCTS: 'merchant_products',
+  EVENTS: 'merchant_events',
+  SALES: 'merchant_sales',
   MIGRATED: 'pos_migrated_v2',
 }
 
 /** Sample starter catalog when user creates an instance */
 export const SAMPLE_PRODUCTS = [
-  { id: 'sample-1', name: 'Espresso / Lungo', price: 65, script: '' },
-  { id: 'sample-2', name: 'Cappuccino / Flat White', price: 85, script: '' },
-  { id: 'sample-3', name: 'Domácí limonáda 0,4l', price: 79, script: '' },
+  { id: 'sample-1', name: 'Základní položka', price: 65, script: '' },
+  { id: 'sample-2', name: 'Speciální položka', price: 85, script: '' },
+  { id: 'sample-3', name: 'Doplňkový sortiment', price: 45, script: '' },
   {
     id: 'sample-4',
-    name: 'Dezert dne',
+    name: 'Balíček 2+1 zdarma',
     price: 95,
     script: 'return (Math.floor(quantity / 3) * 2 + (quantity % 3)) * price;',
   },
@@ -49,28 +54,27 @@ async function checkAndMigrateLegacyData() {
     const legacyName = localStorage.getItem('pos_business_name')
     const legacyAccount = localStorage.getItem('pos_bank_account') || ''
     const legacyBankId = localStorage.getItem('pos_bank_id') || ''
-    const legacyProductsRaw = localStorage.getItem('pos_products')
+    const legacyRawProducts = localStorage.getItem('pos_products')
 
-    // If there is legacy data
-    if (legacyName || legacyProductsRaw || legacyAccount) {
+    if (legacyName || legacyAccount || legacyRawProducts) {
       let legacyProducts = []
-      if (legacyProductsRaw) {
-        try {
-          const parsed = JSON.parse(legacyProductsRaw)
-          if (Array.isArray(parsed)) {
-            legacyProducts = parsed
-              .map((p) => validateProduct(p))
-              .filter((res) => res.valid && res.product)
-              .map((res) => res.product)
-          }
-        } catch (e) {
-          console.warn('Chyba při parsování starých produktů:', e)
+      try {
+        const parsed = JSON.parse(legacyRawProducts || '[]')
+        if (Array.isArray(parsed)) {
+          legacyProducts = parsed
+            .map((item) => {
+              const res = validateProduct(item)
+              return res.valid ? res.product : null
+            })
+            .filter(Boolean)
         }
+      } catch {
+        legacyProducts = []
       }
 
       const instance = {
-        id: `inst-migrated-${Date.now()}`,
-        name: (legacyName || 'Artist').trim(),
+        id: `inst_${Date.now()}`,
+        name: (legacyName || 'Pokladna').trim(),
         createdAt: Date.now(),
         updatedAt: Date.now(),
         isInitialized: true,
@@ -78,7 +82,7 @@ async function checkAndMigrateLegacyData() {
       }
 
       const settings = {
-        businessName: (legacyName || 'Artist').trim(),
+        businessName: (legacyName || 'Pokladna').trim(),
         accountNumber: legacyAccount.trim(),
         bankId: legacyBankId.trim(),
         currency: 'CZK',
@@ -87,6 +91,8 @@ async function checkAndMigrateLegacyData() {
       await idbSet(KEYS.INSTANCE, instance)
       await idbSet(KEYS.SETTINGS, settings)
       await idbSet(KEYS.PRODUCTS, legacyProducts)
+      await idbSet(KEYS.EVENTS, [])
+      await idbSet(KEYS.SALES, [])
 
       localStorage.setItem(KEYS.MIGRATED, 'true')
     }
@@ -102,6 +108,8 @@ async function checkAndMigrateLegacyData() {
  *   instance: object|null,
  *   settings: object,
  *   products: Array<object>,
+ *   events: Array<object>,
+ *   sales: Array<object>,
  *   storageStatus: object
  * }>}
  */
@@ -110,11 +118,22 @@ export async function loadMerchantData() {
 
   // Ensure persistent storage is active
   await requestStoragePersistence()
-  const storageStatus = await checkStorageStatus()
 
-  const instance = await idbGet(KEYS.INSTANCE)
-  const savedSettings = await idbGet(KEYS.SETTINGS)
-  const savedProducts = await idbGet(KEYS.PRODUCTS)
+  const [
+    instance,
+    savedSettings,
+    savedProducts,
+    savedEvents,
+    savedSales,
+    storageStatus,
+  ] = await Promise.all([
+    idbGet(KEYS.INSTANCE),
+    idbGet(KEYS.SETTINGS),
+    idbGet(KEYS.PRODUCTS),
+    idbGet(KEYS.EVENTS),
+    idbGet(KEYS.SALES),
+    checkStorageStatus(),
+  ])
 
   const defaultSettings = {
     businessName: 'Pokladna',
@@ -130,6 +149,8 @@ export async function loadMerchantData() {
       ? { ...defaultSettings, ...savedSettings }
       : defaultSettings,
     products: Array.isArray(savedProducts) ? savedProducts : [],
+    events: Array.isArray(savedEvents) ? savedEvents : [],
+    sales: Array.isArray(savedSales) ? savedSales : [],
     storageStatus,
   }
 }
@@ -141,61 +162,63 @@ export async function loadMerchantData() {
  * @param {string} params.name
  * @param {string} [params.accountNumber]
  * @param {string} [params.bankId]
- * @param {boolean} [params.includeSampleProducts]
- * @returns {Promise<{ instance: object, settings: object, products: Array<object> }>}
+ * @param {boolean} [params.includeSampleProducts=true]
+ * @returns {Promise<{ instance: object, settings: object, products: Array<object>, events: Array<object>, sales: Array<object> }>}
  */
 export async function initializeMerchantInstance({
   name,
   accountNumber = '',
   bankId = '',
-  logo = '',
-  includeSampleProducts = false,
+  includeSampleProducts = true,
 }) {
-  const cleanName = (name || '').trim() || 'Moje Pokladna'
-
+  const safeName = (name || 'Pokladna').trim().slice(0, 80)
   const settingsValidation = validateSettings({
-    businessName: cleanName,
+    businessName: safeName,
     accountNumber,
     bankId,
-    logo,
   })
 
   if (!settingsValidation.valid) {
     throw new Error(settingsValidation.error)
   }
 
+  const now = Date.now()
   const instance = {
-    id: `inst-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-    name: cleanName,
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
+    id: `inst_${now}`,
+    name: safeName,
+    createdAt: now,
+    updatedAt: now,
     isInitialized: true,
     version: '2.0',
   }
 
-  const products = includeSampleProducts
-    ? SAMPLE_PRODUCTS.map((p) => ({ ...p, id: `prod-${Date.now()}-${p.id}` }))
-    : []
+  const initialProducts = includeSampleProducts ? [...SAMPLE_PRODUCTS] : []
+  const initialEvents = []
+  const initialSales = []
 
   await idbSet(KEYS.INSTANCE, instance)
   await idbSet(KEYS.SETTINGS, settingsValidation.settings)
-  await idbSet(KEYS.PRODUCTS, products)
+  await idbSet(KEYS.PRODUCTS, initialProducts)
+  await idbSet(KEYS.EVENTS, initialEvents)
+  await idbSet(KEYS.SALES, initialSales)
 
-  // Request storage persistence again for the newly created instance
+  // Request durability
   await requestStoragePersistence()
 
   return {
     instance,
     settings: settingsValidation.settings,
-    products,
+    products: initialProducts,
+    events: initialEvents,
+    sales: initialSales,
   }
 }
 
 /**
- * Updates merchant settings.
+ * Saves and validates merchant settings.
  *
  * @param {object} newSettings
- * @returns {Promise<object>}
+ * @returns {Promise<{ settings: object, instance: object|null }>}
  */
 export async function saveMerchantSettings(newSettings) {
   const validation = validateSettings(newSettings)
@@ -205,80 +228,326 @@ export async function saveMerchantSettings(newSettings) {
 
   await idbSet(KEYS.SETTINGS, validation.settings)
 
-  // Update instance metadata name as well
-  const instance = await idbGet(KEYS.INSTANCE)
-  if (instance) {
-    instance.name = validation.settings.businessName
-    instance.updatedAt = Date.now()
-    await idbSet(KEYS.INSTANCE, instance)
+  // Synchronize instance name with business name if instance exists
+  const current = await loadMerchantData()
+  let updatedInstance = current.instance
+  if (current.instance) {
+    updatedInstance = {
+      ...current.instance,
+      name: validation.settings.businessName,
+      updatedAt: Date.now(),
+    }
+    await idbSet(KEYS.INSTANCE, updatedInstance)
   }
 
-  return validation.settings
+  return { settings: validation.settings, instance: updatedInstance }
 }
 
 /**
- * Persists the products array to storage.
+ * Adds or updates a single product in storage.
  *
- * @param {Array<object>} products
- * @returns {Promise<Array<object>>}
+ * @param {object} productData
+ * @returns {Promise<Array<object>>} Updated products array
  */
-export async function saveMerchantProducts(products) {
-  if (!Array.isArray(products)) {
+export async function saveMerchantProduct(productData) {
+  const validation = validateProduct(productData)
+  if (!validation.valid) {
+    throw new Error(validation.error)
+  }
+
+  const currentProducts = (await idbGet(KEYS.PRODUCTS)) || []
+  let nextProducts
+
+  const exists = currentProducts.some((p) => p.id === validation.product.id)
+  if (exists) {
+    nextProducts = currentProducts.map((p) =>
+      p.id === validation.product.id ? validation.product : p
+    )
+  } else {
+    nextProducts = [...currentProducts, validation.product]
+  }
+
+  await idbSet(KEYS.PRODUCTS, nextProducts)
+  return nextProducts
+}
+
+/**
+ * Saves an array of products in storage (bulk update/sync).
+ *
+ * @param {Array<object>} productsArray
+ * @returns {Promise<Array<object>>} Updated products array
+ */
+export async function saveMerchantProducts(productsArray) {
+  if (!Array.isArray(productsArray)) {
     throw new Error('Produkty musí být pole.')
   }
-
-  const validProducts = []
-  for (const item of products) {
-    const result = validateProduct(item)
-    if (result.valid && result.product) {
-      validProducts.push(result.product)
+  const validatedProducts = []
+  for (const item of productsArray) {
+    const validation = validateProduct(item)
+    if (validation.valid && validation.product) {
+      validatedProducts.push(validation.product)
     }
   }
-
-  await idbSet(KEYS.PRODUCTS, validProducts)
-  return validProducts
+  await idbSet(KEYS.PRODUCTS, validatedProducts)
+  return validatedProducts
 }
 
 /**
- * Generates an exportable backup object for the current merchant instance.
+ * Deletes a product from storage.
  *
- * @returns {Promise<{ filename: string, jsonString: string, payload: object }>}
+ * @param {string} productId
+ * @returns {Promise<Array<object>>} Updated products array
  */
-export async function exportMerchantBackup() {
-  const instance = await idbGet(KEYS.INSTANCE)
-  const settings = (await idbGet(KEYS.SETTINGS)) || { businessName: 'Merchant' }
-  const products = (await idbGet(KEYS.PRODUCTS)) || []
+export async function deleteMerchantProduct(productId) {
+  const currentProducts = (await idbGet(KEYS.PRODUCTS)) || []
+  const nextProducts = currentProducts.filter((p) => p.id !== productId)
 
-  const payload = {
-    version: '2.0',
-    type: 'merchant_backup',
-    exportedAt: new Date().toISOString(),
-    merchant: instance || {
-      id: `inst-${Date.now()}`,
-      name: settings.businessName,
-      createdAt: Date.now(),
-      isInitialized: true,
-    },
-    settings,
-    products,
+  await idbSet(KEYS.PRODUCTS, nextProducts)
+  return nextProducts
+}
+
+/**
+ * Adds a new event to storage.
+ *
+ * @param {object} eventData
+ * @returns {Promise<{ createdEvent: object, newEvent: object, events: Array<object>, allEvents: Array<object> }>}
+ */
+export async function addMerchantEvent(eventData) {
+  const validation = validateEvent(eventData)
+  if (!validation.valid) {
+    throw new Error(validation.error)
   }
 
-  const safeName = (settings.businessName || 'merchant')
+  const currentEvents = (await idbGet(KEYS.EVENTS)) || []
+  const nextEvents = [validation.event, ...currentEvents]
+
+  await idbSet(KEYS.EVENTS, nextEvents)
+  return {
+    createdEvent: validation.event,
+    newEvent: validation.event,
+    events: nextEvents,
+    allEvents: nextEvents,
+  }
+}
+
+/**
+ * Updates an existing event in storage.
+ *
+ * @param {string} eventId
+ * @param {object} eventData
+ * @returns {Promise<{ updatedEvent: object, events: Array<object>, allEvents: Array<object> }>}
+ */
+export async function updateMerchantEvent(eventId, eventData) {
+  const currentEvents = (await idbGet(KEYS.EVENTS)) || []
+  const existing = currentEvents.find((e) => e.id === eventId)
+  if (!existing) {
+    throw new Error('Událost nebyla nalezena.')
+  }
+
+  // Preserve existing expenses and id if not explicitly replaced
+  const merged = {
+    ...existing,
+    ...eventData,
+    id: eventId,
+    expenses: eventData.expenses || existing.expenses || [],
+  }
+
+  const validation = validateEvent(merged)
+  if (!validation.valid) {
+    throw new Error(validation.error)
+  }
+
+  const nextEvents = currentEvents.map((e) =>
+    e.id === eventId ? validation.event : e
+  )
+
+  await idbSet(KEYS.EVENTS, nextEvents)
+  return {
+    updatedEvent: validation.event,
+    events: nextEvents,
+    allEvents: nextEvents,
+  }
+}
+
+/**
+ * Deletes an event by ID.
+ * (Sales that occurred in this event's interval automatically fall back to uncategorized by day).
+ *
+ * @param {string} eventId
+ * @returns {Promise<Array<object>>} Updated events array
+ */
+export async function deleteMerchantEvent(eventId) {
+  const currentEvents = (await idbGet(KEYS.EVENTS)) || []
+  const nextEvents = currentEvents.filter((e) => e.id !== eventId)
+
+  await idbSet(KEYS.EVENTS, nextEvents)
+  return nextEvents
+}
+
+/**
+ * Adds an expense to an event.
+ *
+ * @param {string} eventId
+ * @param {object} expenseData
+ * @returns {Promise<{ createdExpense: object, newExpense: object, updatedEvent: object, events: Array<object>, allEvents: Array<object> }>}
+ */
+export async function addMerchantEventExpense(eventId, expenseData) {
+  const validation = validateExpense(expenseData)
+  if (!validation.valid) {
+    throw new Error(validation.error)
+  }
+
+  const currentEvents = (await idbGet(KEYS.EVENTS)) || []
+  const targetEvent = currentEvents.find((e) => e.id === eventId)
+  if (!targetEvent) {
+    throw new Error('Událost pro přidání výdaje nebyla nalezena.')
+  }
+
+  const existingExpenses = Array.isArray(targetEvent.expenses)
+    ? targetEvent.expenses
+    : []
+  const nextExpenses = [validation.expense, ...existingExpenses]
+
+  const updatedEvent = {
+    ...targetEvent,
+    expenses: nextExpenses,
+  }
+
+  const nextEvents = currentEvents.map((e) =>
+    e.id === eventId ? updatedEvent : e
+  )
+
+  await idbSet(KEYS.EVENTS, nextEvents)
+  return {
+    createdExpense: validation.expense,
+    newExpense: validation.expense,
+    updatedEvent,
+    events: nextEvents,
+    allEvents: nextEvents,
+  }
+}
+
+/**
+ * Deletes an expense from an event.
+ *
+ * @param {string} eventId
+ * @param {string} expenseId
+ * @returns {Promise<Array<object> & { updatedEvent: object, events: Array<object>, allEvents: Array<object> }>} Updated events array with helper properties
+ */
+export async function deleteMerchantEventExpense(eventId, expenseId) {
+  const currentEvents = (await idbGet(KEYS.EVENTS)) || []
+  const targetEvent = currentEvents.find((e) => e.id === eventId)
+  if (!targetEvent) {
+    throw new Error('Událost pro smazání výdaje nebyla nalezena.')
+  }
+
+  const existingExpenses = Array.isArray(targetEvent.expenses)
+    ? targetEvent.expenses
+    : []
+  const nextExpenses = existingExpenses.filter((ex) => ex.id !== expenseId)
+
+  const updatedEvent = {
+    ...targetEvent,
+    expenses: nextExpenses,
+  }
+
+  const nextEvents = currentEvents.map((e) =>
+    e.id === eventId ? updatedEvent : e
+  )
+
+  await idbSet(KEYS.EVENTS, nextEvents)
+  return Object.assign([...nextEvents], {
+    updatedEvent,
+    events: nextEvents,
+    allEvents: nextEvents,
+  })
+}
+
+/**
+ * Records a new completed sale into IndexedDB.
+ *
+ * @param {object} saleData
+ * @returns {Promise<{ createdSale: object, newSale: object, sales: Array<object>, allSales: Array<object> }>}
+ */
+export async function recordMerchantSale(saleData) {
+  const validation = validateSale(saleData)
+  if (!validation.valid) {
+    throw new Error(validation.error)
+  }
+
+  const currentSales = (await idbGet(KEYS.SALES)) || []
+  const nextSales = [validation.sale, ...currentSales]
+
+  await idbSet(KEYS.SALES, nextSales)
+  return {
+    createdSale: validation.sale,
+    newSale: validation.sale,
+    sales: nextSales,
+    allSales: nextSales,
+  }
+}
+
+export const addMerchantSale = recordMerchantSale
+
+/**
+ * Exports complete merchant payload for backup.
+ *
+ * @returns {Promise<{ jsonString: string, filename: string, backup: object }>}
+ */
+export async function exportMerchantBackup() {
+  const data = await loadMerchantData()
+
+  const backup = {
+    version: '2.0',
+    schemaVersion: '2.0',
+    type: 'merchant_backup',
+    exportedAt: new Date().toISOString(),
+    merchant: data.instance,
+    settings: data.settings,
+    products: data.products,
+    events: data.events,
+    sales: data.sales,
+  }
+
+  const validation = validateBackupPayload(backup)
+  if (!validation.valid) {
+    throw new Error(
+      `Příprava zálohy selhala: ${validation.error || 'Neplatná data'}`
+    )
+  }
+
+  const jsonString = JSON.stringify(validation.backup, null, 2)
+  const safeName = (data.instance?.name || 'merchant')
     .toLowerCase()
     .replace(/[^a-z0-9_-]/g, '_')
   const dateStr = new Date().toISOString().slice(0, 10)
-  const filename = `merchant_${safeName}_backup_${dateStr}.json`
-  const jsonString = JSON.stringify(payload, null, 2)
+  const filename = `${safeName}_backup_${dateStr}.json`
 
-  return { filename, jsonString, payload }
+  // Trigger browser file download if in DOM environment
+  if (typeof document !== 'undefined') {
+    try {
+      const blob = new Blob([jsonString], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      console.warn('Nelze automaticky stáhnout soubor zálohy:', err)
+    }
+  }
+
+  return { jsonString, filename, backup: validation.backup }
 }
 
 /**
  * Imports a merchant backup from parsed object or JSON string.
  *
  * @param {string|object} backupData
- * @returns {Promise<{ instance: object, settings: object, products: Array<object> }>}
- */
+ * @returns {Promise<{ instance: object, settings: object, products: Array<object>, events: Array<object>, sales: Array<object> }>}\n */
 export async function importMerchantBackup(backupData) {
   let parsed = backupData
   if (typeof backupData === 'string') {
@@ -299,6 +568,8 @@ export async function importMerchantBackup(backupData) {
   await idbSet(KEYS.INSTANCE, backup.merchant)
   await idbSet(KEYS.SETTINGS, backup.settings)
   await idbSet(KEYS.PRODUCTS, backup.products)
+  await idbSet(KEYS.EVENTS, backup.events || [])
+  await idbSet(KEYS.SALES, backup.sales || [])
 
   // Request durability
   await requestStoragePersistence()
@@ -307,6 +578,8 @@ export async function importMerchantBackup(backupData) {
     instance: backup.merchant,
     settings: backup.settings,
     products: backup.products,
+    events: backup.events || [],
+    sales: backup.sales || [],
   }
 }
 
@@ -320,6 +593,8 @@ export async function deleteMerchantInstance() {
   await idbDelete(KEYS.INSTANCE)
   await idbDelete(KEYS.SETTINGS)
   await idbDelete(KEYS.PRODUCTS)
+  await idbDelete(KEYS.EVENTS)
+  await idbDelete(KEYS.SALES)
   await idbClear()
 
   // Clean legacy localStorage keys as well

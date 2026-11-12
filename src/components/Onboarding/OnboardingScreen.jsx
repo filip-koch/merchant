@@ -57,7 +57,7 @@ export default function OnboardingScreen() {
   }
 
   const handleRemoveLogo = () => {
-    triggerHaptic([30, 20])
+    triggerHaptic([20, 20])
     setLogo('')
     if (logoInputRef.current) {
       logoInputRef.current.value = ''
@@ -70,7 +70,7 @@ export default function OnboardingScreen() {
 
     const cleanName = shopName.trim()
     if (!cleanName) {
-      setCreateError('Zadejte prosím název pokladny nebo obchodu.')
+      setCreateError('Zadejte prosím název pokladny nebo stánku.')
       return
     }
 
@@ -85,35 +85,37 @@ export default function OnboardingScreen() {
         return
       }
       if (!validateBankId(cleanBank)) {
-        setCreateError('Kód banky musí být 4 číslice (např. 0800).')
+        setCreateError('Kód banky musí mít přesně 4 číslice (např. 0800).')
         return
       }
     }
 
     setIsSubmitting(true)
     try {
-      triggerHaptic([40, 60, 40])
+      triggerHaptic(30)
       await initializeInstance({
         name: cleanName,
         accountNumber: cleanAccount,
         bankId: cleanBank,
         logo,
+        includeSampleProducts: true,
       })
     } catch (err) {
-      setCreateError(err.message || 'Nepodařilo se vytvořit instanci.')
+      setCreateError(err.message || 'Chyba při vytváření pokladny.')
       setIsSubmitting(false)
     }
   }
 
-  const handleFileSelect = (file) => {
+  const handleFileChange = (e) => {
     setImportError('')
-    setBackupPreview(null)
     setImportFile(null)
+    setBackupPreview(null)
 
+    const file = e.target.files?.[0]
     if (!file) return
 
     if (!file.name.endsWith('.json')) {
-      setImportError('Vyberte prosím platný soubor zálohy ve formátu .json.')
+      setImportError('Vyberte prosím platný soubor zálohy s příponou .json.')
       return
     }
 
@@ -222,13 +224,13 @@ export default function OnboardingScreen() {
                 htmlFor="shopName"
                 className="text-xs font-bold text-zinc-500 uppercase tracking-wider"
               >
-                Název obchodu / pokladny *
+                Název stánku / pokladny *
               </label>
               <input
                 id="shopName"
                 type="text"
                 autoFocus
-                placeholder="Např. Kavárna Na Rohu"
+                placeholder="Např. Stánek na trzích"
                 value={shopName}
                 onChange={(e) => setShopName(e.target.value)}
                 className="bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-zinc-800 focus:ring-1 focus:ring-zinc-800 font-semibold transition-all"
@@ -251,53 +253,56 @@ export default function OnboardingScreen() {
               />
 
               {logo ? (
-                <div className="flex items-center gap-3 bg-zinc-50 border border-zinc-200 rounded-xl p-2.5">
+                <div className="flex items-center gap-3 bg-zinc-50 border border-zinc-200/80 rounded-xl p-2.5">
                   <img
                     src={logo}
-                    alt="Logo preview"
-                    className="w-11 h-11 rounded-lg border border-zinc-200 object-cover bg-white"
+                    alt="Logo"
+                    className="w-12 h-12 rounded-lg border border-zinc-200 object-cover bg-white shrink-0"
                   />
-                  <div className="flex-1 flex items-center justify-between">
-                    <span className="text-xs font-semibold text-zinc-800">
-                      Čtvercové logo připraveno
+                  <div className="flex-1 text-xs">
+                    <span className="font-bold text-zinc-800 block">
+                      Logo nahráno
                     </span>
-                    <button
-                      type="button"
-                      onClick={handleRemoveLogo}
-                      className="p-1 text-zinc-400 hover:text-red-600 transition-colors cursor-pointer"
-                      title="Odebrat logo"
-                    >
-                      <Trash2 size={15} />
-                    </button>
+                    <span className="text-[10px] text-zinc-400">
+                      Bude umístěno ve středu QR platby
+                    </span>
                   </div>
+                  <button
+                    type="button"
+                    onClick={handleRemoveLogo}
+                    className="p-1.5 text-zinc-400 hover:text-red-600 transition-colors cursor-pointer"
+                    title="Odstranit"
+                  >
+                    <Trash2 size={15} />
+                  </button>
                 </div>
               ) : (
                 <button
                   type="button"
                   onClick={() => logoInputRef.current?.click()}
                   disabled={isProcessingLogo}
-                  className="border border-dashed border-zinc-300 hover:border-zinc-400 bg-zinc-50/50 rounded-xl py-2.5 px-3 flex items-center justify-center gap-2 text-xs text-zinc-600 font-medium transition-all cursor-pointer"
+                  className="border border-dashed border-zinc-300 hover:border-zinc-400 bg-zinc-50/50 hover:bg-zinc-50 rounded-xl p-3 flex items-center justify-center gap-2 text-xs text-zinc-600 font-semibold transition-all cursor-pointer"
                 >
-                  <ImageIcon size={14} className="text-zinc-400" />
+                  <ImageIcon size={15} className="text-zinc-400" />
                   <span>
                     {isProcessingLogo
-                      ? 'Zpracovávám...'
-                      : 'Přidat čtvercové logo (PNG, JPG, SVG)'}
+                      ? 'Zpracovávám obrázek...'
+                      : 'Nahrát čtvercové logo stánku'}
                   </span>
                 </button>
               )}
             </div>
 
-            {/* Bank credentials (Optional) */}
+            {/* Optional Bank account for QR payment */}
             <div className="border-t border-zinc-100 pt-3 flex flex-col gap-3">
-              <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">
-                Bankovní spojení pro QR platby (nepovinné)
+              <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
+                Příjem QR plateb (volitelné)
               </span>
 
-              <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-1">
                 <label
                   htmlFor="accountNumber"
-                  className="text-[11px] font-semibold text-zinc-500 uppercase"
+                  className="text-[11px] font-semibold text-zinc-400 uppercase"
                 >
                   Číslo účtu
                 </label>
@@ -308,14 +313,14 @@ export default function OnboardingScreen() {
                   placeholder="Např. 19-1234567890"
                   value={accountNumber}
                   onChange={(e) => setAccountNumber(e.target.value)}
-                  className="bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-2.5 text-xs text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-zinc-800 focus:ring-1 focus:ring-zinc-800 font-mono transition-all"
+                  className="bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-zinc-800 focus:ring-1 focus:ring-zinc-800 font-mono transition-all"
                 />
               </div>
 
-              <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-1">
                 <label
                   htmlFor="bankId"
-                  className="text-[11px] font-semibold text-zinc-500 uppercase"
+                  className="text-[11px] font-semibold text-zinc-400 uppercase"
                 >
                   Kód banky (4 číslice)
                 </label>
@@ -328,14 +333,14 @@ export default function OnboardingScreen() {
                     placeholder="0800"
                     value={bankId}
                     onChange={(e) => setBankId(e.target.value)}
-                    className="w-24 bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2.5 text-xs text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-zinc-800 focus:ring-1 focus:ring-zinc-800 font-mono transition-all"
+                    className="w-24 bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-zinc-800 focus:ring-1 focus:ring-zinc-800 font-mono transition-all"
                   />
                   <select
                     value={bankId}
                     onChange={(e) => setBankId(e.target.value)}
                     className="flex-1 bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2.5 text-xs text-zinc-700 focus:outline-none focus:border-zinc-800 transition-all cursor-pointer truncate"
                   >
-                    <option value="">Vybrat banku ze seznamu...</option>
+                    <option value="">Rychlý výběr banky...</option>
                     {CZECH_BANKS.map((b) => (
                       <option key={b.code} value={b.code}>
                         {b.name} ({b.code})
@@ -343,26 +348,12 @@ export default function OnboardingScreen() {
                     ))}
                   </select>
                 </div>
-
-                <div className="flex items-start gap-2 bg-amber-500/10 border border-amber-500/20 rounded-xl p-2.5 text-amber-900 mt-1">
-                  <AlertCircle
-                    size={14}
-                    className="text-amber-600 shrink-0 mt-0.5"
-                  />
-                  <p className="text-[11px] leading-relaxed text-amber-800">
-                    <strong className="font-semibold text-amber-900">
-                      Důležité:
-                    </strong>{' '}
-                    Před použitím v reálném provozu nejprve ověřte funkčnost
-                    testovací platbou (např. 1 Kč).
-                  </p>
-                </div>
               </div>
             </div>
 
             {createError && (
-              <div className="flex items-start gap-2 bg-red-50 border border-red-100 text-red-700 rounded-xl p-3 text-xs leading-relaxed">
-                <AlertCircle size={16} className="shrink-0 mt-0.5" />
+              <div className="bg-red-50 border border-red-100 text-red-700 rounded-xl p-3 text-xs flex items-start gap-2">
+                <AlertCircle size={15} className="shrink-0 mt-0.5" />
                 <span>{createError}</span>
               </div>
             )}
@@ -370,7 +361,7 @@ export default function OnboardingScreen() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="mt-2 bg-zinc-950 hover:bg-zinc-800 text-white font-bold py-3.5 px-5 rounded-xl text-sm transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
+              className="bg-zinc-950 hover:bg-zinc-800 text-white font-bold py-3.5 px-4 rounded-xl text-sm transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2 mt-1 shadow-sm disabled:opacity-50"
             >
               <span>{isSubmitting ? 'Vytvářím...' : 'Spustit pokladnu'}</span>
               <ArrowRight size={16} />
@@ -378,7 +369,7 @@ export default function OnboardingScreen() {
           </form>
         )}
 
-        {/* Tab 2: Upload existing backup */}
+        {/* Tab 2: Import Instance from JSON */}
         {activeTab === 'import' && (
           <div className="bg-white border border-zinc-200/80 rounded-2xl p-5 sm:p-6 shadow-sm shadow-zinc-100 flex flex-col gap-4 animate-fade-in">
             <input
@@ -386,32 +377,29 @@ export default function OnboardingScreen() {
               type="file"
               accept=".json,application/json"
               className="hidden"
-              onChange={(e) => handleFileSelect(e.target.files?.[0])}
+              onChange={handleFileChange}
             />
 
             {!backupPreview ? (
               <div
                 onClick={() => fileInputRef.current?.click()}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => {
-                  e.preventDefault()
-                  handleFileSelect(e.dataTransfer.files?.[0])
-                }}
-                className="border-2 border-dashed border-zinc-200 hover:border-zinc-400 rounded-2xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-colors bg-zinc-50/50 group"
+                className="border-2 border-dashed border-zinc-300 hover:border-zinc-500 rounded-2xl p-8 text-center cursor-pointer transition-all flex flex-col items-center gap-3 bg-zinc-50/50 hover:bg-zinc-50 group"
               >
-                <div className="w-12 h-12 rounded-full bg-zinc-100 group-hover:bg-zinc-200 flex items-center justify-center mb-3 transition-colors">
-                  <Upload size={20} className="text-zinc-600" />
+                <div className="w-12 h-12 rounded-2xl bg-zinc-100 group-hover:bg-zinc-200 flex items-center justify-center text-zinc-500 transition-colors">
+                  <FileText size={24} />
                 </div>
-                <span className="text-xs font-bold text-zinc-800">
-                  Klepněte pro výběr souboru .json
-                </span>
-                <span className="text-[11px] text-zinc-400 mt-1">
-                  nebo sem soubor přetáhněte myší
-                </span>
+                <div>
+                  <span className="text-sm font-bold text-zinc-900 block">
+                    Vyberte soubor zálohy (.json)
+                  </span>
+                  <span className="text-xs text-zinc-400 mt-1 block">
+                    Klikněte zde nebo přetáhněte soubor
+                  </span>
+                </div>
               </div>
             ) : (
-              <div className="border border-emerald-200 bg-emerald-50/40 rounded-xl p-4 flex flex-col gap-2">
-                <div className="flex items-center gap-2 text-emerald-800">
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center gap-2 text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-xl p-3">
                   <CheckCircle2 size={18} />
                   <span className="text-xs font-bold">
                     Záloha byla úspěšně načtena
@@ -419,7 +407,7 @@ export default function OnboardingScreen() {
                 </div>
                 <div className="text-xs text-zinc-700 flex flex-col gap-1 mt-1 pl-6">
                   <div>
-                    <span className="text-zinc-400">Obchod:</span>{' '}
+                    <span className="text-zinc-400">Stánek:</span>{' '}
                     <strong className="font-semibold text-zinc-900">
                       {backupPreview.name}
                     </strong>
@@ -433,28 +421,19 @@ export default function OnboardingScreen() {
                   <div>
                     <span className="text-zinc-400">Platby:</span>{' '}
                     <span>
-                      {backupPreview.hasBank
-                        ? 'QR kód nastaven'
-                        : 'Pouze hotovost'}
+                      {backupPreview.hasBank ? 'Nastaveny' : 'Bez banky'}
                     </span>
                   </div>
-                  {backupPreview.hasLogo && (
-                    <div>
-                      <span className="text-zinc-400">Logo:</span>{' '}
-                      <span className="text-emerald-700 font-semibold">
-                        Zahrnuto v záloze
-                      </span>
-                    </div>
-                  )}
                 </div>
 
                 <button
                   type="button"
                   onClick={() => {
-                    setBackupPreview(null)
                     setImportFile(null)
+                    setBackupPreview(null)
+                    if (fileInputRef.current) fileInputRef.current.value = ''
                   }}
-                  className="text-[10px] text-zinc-400 hover:text-zinc-600 underline mt-1 text-left pl-6 cursor-pointer"
+                  className="text-xs text-zinc-400 hover:text-zinc-600 underline cursor-pointer self-start pl-6 mt-1"
                 >
                   Vybrat jiný soubor
                 </button>
@@ -462,24 +441,31 @@ export default function OnboardingScreen() {
             )}
 
             {importError && (
-              <div className="flex items-start gap-2 bg-red-50 border border-red-100 text-red-700 rounded-xl p-3 text-xs leading-relaxed">
-                <AlertCircle size={16} className="shrink-0 mt-0.5" />
+              <div className="bg-red-50 border border-red-100 text-red-700 rounded-xl p-3 text-xs flex items-start gap-2">
+                <AlertCircle size={15} className="shrink-0 mt-0.5" />
                 <span>{importError}</span>
               </div>
             )}
 
             <button
               type="button"
-              disabled={!backupPreview || isSubmitting}
+              disabled={!importFile || isSubmitting}
               onClick={handleConfirmImport}
-              className="bg-zinc-950 hover:bg-zinc-800 text-white font-bold py-3.5 px-5 rounded-xl text-sm transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
+              className="bg-zinc-950 hover:bg-zinc-800 text-white font-bold py-3.5 px-4 rounded-xl text-sm transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2 mt-2 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              <FileText size={16} />
-              <span>{isSubmitting ? 'Obnovuji...' : 'Obnovit pokladnu'}</span>
+              <span>
+                {isSubmitting ? 'Obnovuji...' : 'Obnovit data stánku'}
+              </span>
+              <ArrowRight size={16} />
             </button>
           </div>
         )}
       </div>
+
+      {/* Footer info */}
+      <footer className="text-center text-[11px] text-zinc-400 mt-6 select-none">
+        Merchant POS · Offline-first PWA pokladna pro stánkový prodej
+      </footer>
     </div>
   )
 }
