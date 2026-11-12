@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { AlertTriangle } from 'lucide-react'
 import { triggerHaptic } from '../utils/paymentUtils.js'
 import { toSvg, czechAccountToIban } from '../qr/index.js'
+import { useI18n } from '../i18n/useI18n.js'
 
 export default function PaymentModal({
   type,
@@ -12,6 +13,7 @@ export default function PaymentModal({
   onClose,
   onConfirm,
 }) {
+  const { t, formatCurrency } = useI18n()
   const [timeLeft, setTimeLeft] = useState(10) // 10 seconds for cash
   const [paymentSuccess, setPaymentSuccess] = useState(false)
   const [finalAmount] = useState(amount)
@@ -59,7 +61,7 @@ export default function PaymentModal({
         },
       })
     } catch (err) {
-      console.error('Chyba při generování QR SVG:', err)
+      console.error('Error generating QR SVG:', err)
       return ''
     }
   }, [type, iban, amount, shopName, logo])
@@ -155,19 +157,16 @@ export default function PaymentModal({
               </svg>
             </div>
             <h2 className="text-xl font-bold text-zinc-900 mt-6">
-              Platba dokončena!
+              {t('payment.success')}
             </h2>
-            <p className="text-xs text-zinc-400 mt-1">
-              Transakce byla úspěšně zpracována.
-            </p>
             <p className="text-3xl font-black text-zinc-950 mt-5">
-              {finalAmount.toLocaleString('cs-CZ')} Kč
+              {formatCurrency(finalAmount)}
             </p>
             <button
               onClick={onClose}
               className="mt-8 bg-zinc-950 hover:bg-zinc-800 text-white font-semibold rounded-xl text-sm py-3 px-6 active:scale-95 transition-all w-full cursor-pointer"
             >
-              Zavřít
+              {t('common.close')}
             </button>
           </div>
         ) : (
@@ -175,16 +174,15 @@ export default function PaymentModal({
           <div className="flex-1 flex flex-col animate-fade-in">
             <div className="text-center pb-4 border-b border-zinc-100">
               <h3 className="font-bold text-base text-zinc-900">
-                {type === 'cash' ? 'Platba hotovostí' : 'Platba QR kódem'}
+                {type === 'cash'
+                  ? t('payment.cashTitle')
+                  : t('payment.qrTitle')}
               </h3>
             </div>
 
             <div className="text-center py-4">
               <span className="text-4xl font-black text-zinc-900 tracking-tight font-mono">
-                {finalAmount.toLocaleString('cs-CZ')}
-              </span>
-              <span className="text-base font-bold text-zinc-900 ml-1.5">
-                Kč
+                {formatCurrency(finalAmount)}
               </span>
             </div>
 
@@ -198,10 +196,7 @@ export default function PaymentModal({
                   />
                 </div>
                 <p className="text-xs text-zinc-400">
-                  Automatické potvrzení za{' '}
-                  <strong className="text-zinc-800 font-semibold">
-                    {timeLeft.toFixed(1)}s
-                  </strong>
+                  {t('payment.autoConfirm', { seconds: timeLeft.toFixed(1) })}
                 </p>
               </div>
             )}
@@ -218,11 +213,7 @@ export default function PaymentModal({
                   <div className="text-center py-6 text-zinc-500 flex flex-col items-center">
                     <AlertTriangle size={28} className="text-amber-500 mb-2" />
                     <p className="font-semibold text-xs text-zinc-800">
-                      Chybí bankovní spojení
-                    </p>
-                    <p className="text-[11px] mt-1 text-zinc-400 max-w-[200px] leading-normal">
-                      Pro generování QR kódů musíte nastavit číslo účtu (kolečko
-                      v záhlaví).
+                      {t('payment.noBankConfig')}
                     </p>
                   </div>
                 )}
@@ -235,7 +226,7 @@ export default function PaymentModal({
                 onClick={handleCancel}
                 className="flex-1 py-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-semibold rounded-xl text-xs transition-all cursor-pointer active:scale-95 text-center border border-zinc-200/40"
               >
-                Zrušit
+                {t('common.cancel')}
               </button>
 
               {(type === 'cash' || iban) && (
@@ -243,7 +234,7 @@ export default function PaymentModal({
                   onClick={handleConfirm}
                   className="flex-1 py-3 bg-zinc-950 hover:bg-zinc-800 text-white font-semibold rounded-xl text-xs transition-all cursor-pointer active:scale-95 text-center shadow-sm"
                 >
-                  {type === 'cash' ? 'Potvrdit' : 'Potvrdit přijetí'}
+                  {t('payment.confirm')}
                 </button>
               )}
             </div>

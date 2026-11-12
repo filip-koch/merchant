@@ -99,6 +99,8 @@ export function validateSettings(settings) {
     }
   }
 
+  const language = raw.language === 'en' ? 'en' : 'cs'
+
   return {
     valid: true,
     settings: {
@@ -107,6 +109,201 @@ export function validateSettings(settings) {
       bankId,
       logo,
       currency: 'CZK',
+      language,
+    },
+  }
+}
+
+/**
+ * Validates and sanitizes a single expense object.
+ *
+ * @param {unknown} item
+ * @returns {{ valid: boolean, expense?: object, error?: string }}
+ */
+export function validateExpense(item) {
+  if (!item || typeof item !== 'object') {
+    return { valid: false, error: 'Položka výdaje musí být objekt.' }
+  }
+
+  const raw = /** @type {Record<string, any>} */ (item)
+
+  if (typeof raw.name !== 'string' || !raw.name.trim()) {
+    return { valid: false, error: 'Název výdaje je povinný řetězec.' }
+  }
+
+  const amountNum =
+    typeof raw.amount === 'number' ? raw.amount : parseFloat(raw.amount)
+
+  if (isNaN(amountNum) || amountNum <= 0 || !isFinite(amountNum)) {
+    return { valid: false, error: 'Částka výdaje musí být kladné číslo.' }
+  }
+
+  const sanitizedName = raw.name.trim().slice(0, 120)
+  const sanitizedId =
+    typeof raw.id === 'string' && raw.id.trim()
+      ? raw.id.trim().slice(0, 64)
+      : `exp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+
+  return {
+    valid: true,
+    expense: {
+      id: sanitizedId,
+      name: sanitizedName,
+      amount: Math.round(amountNum * 100) / 100,
+      createdAt: typeof raw.createdAt === 'number' ? raw.createdAt : Date.now(),
+    },
+  }
+}
+
+/**
+ * Validates and sanitizes a single event object.
+ *
+ * @param {unknown} item
+ * @returns {{ valid: boolean, event?: object, error?: string }}
+ */
+export function validateEvent(item) {
+  if (!item || typeof item !== 'object') {
+    return { valid: false, error: 'Položka události musí být objekt.' }
+  }
+
+  const raw = /** @type {Record<string, any>} */ (item)
+
+  if (typeof raw.name !== 'string' || !raw.name.trim()) {
+    return { valid: false, error: 'Název události je povinný řetězec.' }
+  }
+
+  if (!raw.startDateTime) {
+    return { valid: false, error: 'Čas začátku události je povinný.' }
+  }
+
+  if (!raw.endDateTime) {
+    return { valid: false, error: 'Čas konce události je povinný.' }
+  }
+
+  const startTime = new Date(raw.startDateTime).getTime()
+  const endTime = new Date(raw.endDateTime).getTime()
+
+  if (isNaN(startTime)) {
+    return { valid: false, error: 'Neplatný formát začátku události.' }
+  }
+
+  if (isNaN(endTime)) {
+    return { valid: false, error: 'Neplatný formát konce události.' }
+  }
+
+  if (endTime < startTime) {
+    return {
+      valid: false,
+      error: 'Konec události nesmí být dříve než začátek.',
+    }
+  }
+
+  const sanitizedName = raw.name.trim().slice(0, 120)
+  const sanitizedId =
+    typeof raw.id === 'string' && raw.id.trim()
+      ? raw.id.trim().slice(0, 64)
+      : `event-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+
+  // Validate expenses array
+  const rawExpenses = Array.isArray(raw.expenses) ? raw.expenses : []
+  const validatedExpenses = []
+  for (let i = 0; i < rawExpenses.length; i++) {
+    const expValidation = validateExpense(rawExpenses[i])
+    if (expValidation.valid && expValidation.expense) {
+      validatedExpenses.push(expValidation.expense)
+    }
+  }
+
+  return {
+    valid: true,
+    event: {
+      id: sanitizedId,
+      name: sanitizedName,
+      startDateTime: new Date(startTime).toISOString(),
+      endDateTime: new Date(endTime).toISOString(),
+      expenses: validatedExpenses,
+      createdAt: typeof raw.createdAt === 'number' ? raw.createdAt : Date.now(),
+      updatedAt: typeof raw.updatedAt === 'number' ? raw.updatedAt : Date.now(),
+    },
+  }
+}
+
+/**
+ * Validates and sanitizes a single sale record.
+ *
+ * @param {unknown} item
+ * @returns {{ valid: boolean, sale?: object, error?: string }}
+ */
+export function validateSale(item) {
+  if (!item || typeof item !== 'object') {
+    return { valid: false, error: 'Položka prodeje musí být objekt.' }
+  }
+
+  const raw = /** @type {Record<string, any>} */ (item)
+
+  const totalNum =
+    typeof raw.totalAmount === 'number'
+      ? raw.totalAmount
+      : typeof raw.total === 'number'
+        ? raw.total
+        : parseFloat(raw.totalAmount || raw.total)
+
+  if (isNaN(totalNum) || totalNum < 0 || !isFinite(totalNum)) {
+    return {
+      valid: false,
+      error: 'Částka prodeje musí být nezáporné číslo.',
+    }
+  }
+
+  const timestamp =
+    typeof raw.timestamp === 'number'
+      ? raw.timestamp
+      : raw.date
+        ? new Date(raw.date).getTime()
+        : Date.now()
+
+  const safeTimestamp = isNaN(timestamp) ? Date.now() : timestamp
+  const dateStr = new Date(safeTimestamp).toISOString()
+  const paymentType = raw.paymentType === 'qr' ? 'qr' : 'cash'
+
+  const items = Array.isArray(raw.items)
+    ? raw.items
+        .filter(
+          (it) => it && typeof it === 'object' && typeof it.name === 'string'
+        )
+        .map((it) => {
+          const price =
+            typeof it.price === 'number' ? it.price : Number(it.price) || 0
+          const quantity =
+            typeof it.quantity === 'number'
+              ? it.quantity
+              : Number(it.quantity) || 1
+          const total =
+            typeof it.total === 'number' ? it.total : price * quantity
+          return {
+            id: typeof it.id === 'string' ? it.id.slice(0, 64) : '',
+            name: String(it.name).slice(0, 120),
+            price: Math.round(price * 100) / 100,
+            quantity: Math.max(1, Math.round(quantity)),
+            total: Math.round(total * 100) / 100,
+          }
+        })
+    : []
+
+  const sanitizedId =
+    typeof raw.id === 'string' && raw.id.trim()
+      ? raw.id.trim().slice(0, 64)
+      : `sale-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+
+  return {
+    valid: true,
+    sale: {
+      id: sanitizedId,
+      totalAmount: Math.round(totalNum * 100) / 100,
+      paymentType,
+      items,
+      timestamp: safeTimestamp,
+      date: dateStr,
     },
   }
 }
@@ -139,6 +336,7 @@ export function validateBackupPayload(rawData) {
     businessName: data.merchant?.name || data.businessName || 'Pokladna',
     accountNumber: data.bankInfo?.accountNumber || data.accountNumber || '',
     bankId: data.bankInfo?.bankId || data.bankId || '',
+    language: data.settings?.language || 'cs',
   }
 
   const settingsValidation = validateSettings(rawSettings)
@@ -157,6 +355,26 @@ export function validateBackupPayload(rawData) {
     }
   }
 
+  // Validate events list
+  const rawEvents = Array.isArray(data.events) ? data.events : []
+  const validatedEvents = []
+  for (let i = 0; i < rawEvents.length; i++) {
+    const eventValidation = validateEvent(rawEvents[i])
+    if (eventValidation.valid && eventValidation.event) {
+      validatedEvents.push(eventValidation.event)
+    }
+  }
+
+  // Validate sales list
+  const rawSales = Array.isArray(data.sales) ? data.sales : []
+  const validatedSales = []
+  for (let i = 0; i < rawSales.length; i++) {
+    const saleValidation = validateSale(rawSales[i])
+    if (saleValidation.valid && saleValidation.sale) {
+      validatedSales.push(saleValidation.sale)
+    }
+  }
+
   const instanceId =
     typeof data.merchant?.id === 'string'
       ? data.merchant.id.slice(0, 64)
@@ -166,6 +384,7 @@ export function validateBackupPayload(rawData) {
     valid: true,
     backup: {
       version: '2.0',
+      schemaVersion: '2.0',
       type: 'merchant_backup',
       exportedAt:
         typeof data.exportedAt === 'string'
@@ -180,6 +399,8 @@ export function validateBackupPayload(rawData) {
       },
       settings: settingsValidation.settings,
       products: validatedProducts,
+      events: validatedEvents,
+      sales: validatedSales,
     },
   }
 }

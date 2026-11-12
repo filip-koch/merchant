@@ -5,14 +5,17 @@ import GeneralSettingsSection from './GeneralSettingsSection.jsx'
 import ProductsSettingsSection from './ProductsSettingsSection.jsx'
 import BackupSettingsSection from './BackupSettingsSection.jsx'
 import { triggerHaptic } from '../../utils/paymentUtils.js'
+import { useI18n } from '../../i18n/useI18n.js'
 
 export default function SettingsScreen({ onClose }) {
+  const { t } = useI18n()
   const {
     instance,
     settings,
     products,
     updateSettings,
     addProduct,
+    updateProduct,
     deleteProduct,
     exportInstance,
     importInstance,
@@ -29,66 +32,68 @@ export default function SettingsScreen({ onClose }) {
   return (
     <div className="fixed inset-0 bg-zinc-50 z-[100] flex flex-col overflow-hidden animate-slide-up select-none">
       {/* Header */}
-      <header className="flex justify-between items-center bg-white border-b border-zinc-100 px-6 py-4 safe-top shrink-0">
+      <header className="flex justify-between items-center bg-white border-b border-zinc-200/80 px-4 sm:px-6 py-3.5 safe-top shrink-0">
         <button
           onClick={onClose}
-          className="p-2 text-zinc-500 hover:text-zinc-950 hover:bg-zinc-50 rounded-full transition-all active:scale-90 cursor-pointer"
-          aria-label="Zpět do pokladny"
+          className="p-2 -ml-2 text-zinc-600 hover:text-zinc-950 hover:bg-zinc-100 rounded-full transition-all active:scale-95 cursor-pointer"
+          aria-label={t('common.back')}
         >
-          <ArrowLeft size={20} strokeWidth={2.5} />
+          <ArrowLeft size={20} />
         </button>
-        <h2 className="text-base font-bold text-zinc-900">
-          Nastavení pokladny
+        <h2 className="text-base font-semibold text-zinc-900 tracking-tight">
+          {t('settings.title')}
         </h2>
-        <div className="w-9 h-9" /> {/* Spacer for symmetry */}
+        <div className="w-8 h-8" /> {/* Spacer for symmetry */}
       </header>
 
-      {/* Tabs bar */}
-      <div className="bg-white border-b border-zinc-200/70 px-6 py-2.5 shrink-0">
-        <div className="max-w-lg mx-auto flex bg-zinc-100 p-1 rounded-xl">
+      {/* Segmented Control Bar */}
+      <div className="bg-white border-b border-zinc-200/80 px-4 py-2 shrink-0">
+        <div className="max-w-md mx-auto flex bg-zinc-100 p-1 rounded-full">
           <button
             type="button"
             onClick={() => handleTabChange('general')}
-            className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+            className={`flex-1 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
               activeTab === 'general'
-                ? 'bg-white text-zinc-900 shadow-sm'
+                ? 'bg-white text-zinc-900 shadow-xs'
                 : 'text-zinc-500 hover:text-zinc-800'
             }`}
           >
             <Store size={14} />
-            <span>Údaje</span>
+            <span>{t('settings.tabGeneral')}</span>
           </button>
 
           <button
             type="button"
             onClick={() => handleTabChange('products')}
-            className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+            className={`flex-1 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
               activeTab === 'products'
-                ? 'bg-white text-zinc-900 shadow-sm'
+                ? 'bg-white text-zinc-900 shadow-xs'
                 : 'text-zinc-500 hover:text-zinc-800'
             }`}
           >
             <Package size={14} />
-            <span>Položky ({products.length})</span>
+            <span>
+              {t('settings.tabProducts')} ({products.length})
+            </span>
           </button>
 
           <button
             type="button"
             onClick={() => handleTabChange('backup')}
-            className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+            className={`flex-1 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
               activeTab === 'backup'
-                ? 'bg-white text-zinc-900 shadow-sm'
+                ? 'bg-white text-zinc-900 shadow-xs'
                 : 'text-zinc-500 hover:text-zinc-800'
             }`}
           >
             <Database size={14} />
-            <span>Záloha</span>
+            <span>{t('settings.tabBackup')}</span>
           </button>
         </div>
       </div>
 
       {/* Tab content body */}
-      <div className="flex-1 overflow-y-auto px-6 py-6 custom-scrollbar max-w-lg mx-auto w-full pb-safe">
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-5 custom-scrollbar max-w-md mx-auto w-full pb-safe">
         {activeTab === 'general' && (
           <GeneralSettingsSection settings={settings} onSave={updateSettings} />
         )}
@@ -97,6 +102,7 @@ export default function SettingsScreen({ onClose }) {
           <ProductsSettingsSection
             products={products}
             onAddProduct={addProduct}
+            onUpdateProduct={updateProduct}
             onDeleteProduct={deleteProduct}
           />
         )}

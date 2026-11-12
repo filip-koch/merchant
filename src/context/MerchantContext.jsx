@@ -5,6 +5,12 @@ import {
   initializeMerchantInstance,
   saveMerchantSettings,
   saveMerchantProducts,
+  addMerchantEvent,
+  updateMerchantEvent,
+  deleteMerchantEvent,
+  addMerchantEventExpense,
+  deleteMerchantEventExpense,
+  addMerchantSale,
   exportMerchantBackup,
   importMerchantBackup,
   deleteMerchantInstance,
@@ -24,6 +30,8 @@ export function MerchantProvider({ children }) {
     currency: 'CZK',
   })
   const [products, setProducts] = useState([])
+  const [events, setEvents] = useState([])
+  const [sales, setSales] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [storageStatus, setStorageStatus] = useState({
     isPersisted: false,
@@ -42,6 +50,8 @@ export function MerchantProvider({ children }) {
           setInstance(data.instance)
           setSettings(data.settings)
           setProducts(data.products)
+          setEvents(data.events || [])
+          setSales(data.sales || [])
           setStorageStatus(data.storageStatus)
         }
       } catch (err) {
@@ -121,6 +131,46 @@ export function MerchantProvider({ children }) {
     [products]
   )
 
+  const addEvent = useCallback(async (rawEvent) => {
+    const { newEvent, allEvents } = await addMerchantEvent(rawEvent)
+    setEvents(allEvents)
+    return newEvent
+  }, [])
+
+  const updateEvent = useCallback(async (id, updates) => {
+    const updated = await updateMerchantEvent(id, updates)
+    setEvents(updated)
+    return updated
+  }, [])
+
+  const deleteEvent = useCallback(async (id) => {
+    const updated = await deleteMerchantEvent(id)
+    setEvents(updated)
+    return updated
+  }, [])
+
+  const addEventExpense = useCallback(async (eventId, rawExpense) => {
+    const { newExpense, updatedEvent, allEvents } =
+      await addMerchantEventExpense(eventId, rawExpense)
+    setEvents(allEvents)
+    return { newExpense, updatedEvent }
+  }, [])
+
+  const deleteEventExpense = useCallback(async (eventId, expenseId) => {
+    const { updatedEvent, allEvents } = await deleteMerchantEventExpense(
+      eventId,
+      expenseId
+    )
+    setEvents(allEvents)
+    return { updatedEvent }
+  }, [])
+
+  const recordSale = useCallback(async (rawSale) => {
+    const { newSale, allSales } = await addMerchantSale(rawSale)
+    setSales(allSales)
+    return newSale
+  }, [])
+
   const initializeInstance = useCallback(async (initParams) => {
     setIsLoading(true)
     try {
@@ -128,6 +178,8 @@ export function MerchantProvider({ children }) {
       setInstance(res.instance)
       setSettings(res.settings)
       setProducts(res.products)
+      setEvents(res.events || [])
+      setSales(res.sales || [])
       const status = await checkStorageStatus()
       setStorageStatus(status)
       return res
@@ -143,6 +195,8 @@ export function MerchantProvider({ children }) {
       setInstance(res.instance)
       setSettings(res.settings)
       setProducts(res.products)
+      setEvents(res.events || [])
+      setSales(res.sales || [])
       const status = await checkStorageStatus()
       setStorageStatus(status)
       return res
@@ -179,6 +233,8 @@ export function MerchantProvider({ children }) {
         currency: 'CZK',
       })
       setProducts([])
+      setEvents([])
+      setSales([])
       const status = await checkStorageStatus()
       setStorageStatus(status)
     } finally {
@@ -190,6 +246,8 @@ export function MerchantProvider({ children }) {
     instance,
     settings,
     products,
+    events,
+    sales,
     isLoading,
     storageStatus,
     refreshStorageStatus,
@@ -198,6 +256,12 @@ export function MerchantProvider({ children }) {
     addProduct,
     updateProduct,
     deleteProduct,
+    addEvent,
+    updateEvent,
+    deleteEvent,
+    addEventExpense,
+    deleteEventExpense,
+    recordSale,
     initializeInstance,
     importInstance,
     exportInstance,

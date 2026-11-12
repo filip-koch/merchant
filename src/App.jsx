@@ -1,17 +1,20 @@
 import { useState } from 'react'
-import { Settings, ShoppingBag } from 'lucide-react'
+import { Settings, ShoppingBag, BarChart3 } from 'lucide-react'
 import { useMerchant } from './context/useMerchant.js'
 import SettingsScreen from './components/SettingsScreen.jsx'
+import StatisticsScreen from './components/StatisticsScreen.jsx'
 import CartDrawer from './components/CartDrawer.jsx'
 import PaymentModal from './components/PaymentModal.jsx'
 import OnboardingScreen from './components/Onboarding/OnboardingScreen.jsx'
 import { getItemTotal, triggerHaptic } from './utils/paymentUtils.js'
+import { useI18n } from './i18n/useI18n.js'
 
 function PosApp() {
-  const { instance, settings, products, isLoading } = useMerchant()
+  const { instance, settings, products, isLoading, recordSale } = useMerchant()
+  const { t, formatCurrency } = useI18n()
 
   // Screens & overlays state
-  const [activeScreen, setActiveScreen] = useState('pos') // 'pos' or 'settings'
+  const [activeScreen, setActiveScreen] = useState('pos') // 'pos' | 'settings' | 'statistics'
 
   // Cart state
   const [cart, setCart] = useState([])
@@ -65,6 +68,30 @@ function PosApp() {
 
   const cartTotal = cart.reduce((sum, item) => sum + getItemTotal(item), 0)
 
+  // Confirm payment and record sale into storage
+  const handleConfirmPayment = async () => {
+    try {
+      if (cart.length > 0) {
+        await recordSale({
+          totalAmount: cartTotal,
+          paymentType: paymentFlow.type || 'cash',
+          items: cart.map((item) => ({
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            total: getItemTotal(item),
+          })),
+          timestamp: Date.now(),
+          date: new Date().toISOString(),
+        })
+      }
+    } catch (e) {
+      console.error('Error saving sale:', e)
+    }
+    handleClearCart()
+  }
+
   // Loading state
   if (isLoading) {
     return (
@@ -88,21 +115,46 @@ function PosApp() {
     <div className="flex flex-col h-[100dvh] overflow-hidden bg-zinc-50 select-none">
       {/* HEADER SECTION */}
       <header className="flex justify-between items-center bg-white border-b border-zinc-100 px-6 py-4 safe-top z-10 shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-black flex items-center justify-center text-white font-black text-sm select-none shadow-sm">
-            M
-          </div>
-          <span className="text-xl font-bold tracking-tight text-zinc-900">
-            {settings.businessName || 'Pokladna'}
+        <div className="flex items-center gap-3 min-w-0">
+          {settings.logo ? (
+            <img
+              src={settings.logo}
+              alt={settings.businessName || 'Logo'}
+              className="w-8 h-8 rounded-lg object-cover border border-zinc-200/80 shadow-sm shrink-0 bg-white"
+            />
+          ) : (
+            <div className="w-8 h-8 rounded-lg bg-black flex items-center justify-center text-white font-black text-sm select-none shadow-sm shrink-0">
+              M
+            </div>
+          )}
+          <span className="text-xl font-bold tracking-tight text-zinc-900 truncate">
+            {settings.businessName || t('pos.defaultTitle')}
           </span>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* Statistics Button */}
+          <button
+            onClick={() => {
+              triggerHaptic(10)
+              setActiveScreen('statistics')
+            }}
+            className="p-2 text-zinc-500 hover:text-zinc-950 hover:bg-zinc-50 rounded-full transition-all active:scale-90 cursor-pointer"
+            title={t('pos.statisticsTooltip')}
+            aria-label={t('pos.statisticsTooltip')}
+          >
+            <BarChart3 size={20} strokeWidth={2} />
+          </button>
+
           {/* Settings Button */}
           <button
-            onClick={() => setActiveScreen('settings')}
+            onClick={() => {
+              triggerHaptic(10)
+              setActiveScreen('settings')
+            }}
             className="p-2 text-zinc-500 hover:text-zinc-950 hover:bg-zinc-50 rounded-full transition-all active:scale-90 cursor-pointer"
-            aria-label="Nastavení"
+            title={t('pos.settingsTooltip')}
+            aria-label={t('pos.settingsTooltip')}
           >
             <Settings size={20} strokeWidth={2} />
           </button>
@@ -118,17 +170,16 @@ function PosApp() {
                 <ShoppingBag size={22} className="text-zinc-400" />
               </div>
               <h3 className="text-sm font-bold text-zinc-900">
-                Zatím nemáte žádné produkty
+                {t('pos.emptyTitle')}
               </h3>
               <p className="text-xs text-zinc-400 max-w-xs mt-1.5 leading-relaxed">
-                Přejděte do nastavení kliknutím na ozubené kolečko v pravém
-                horním rohu a přidejte své vlastní produkty a ceny.
+                {t('pos.emptyDesc')}
               </p>
               <button
                 onClick={() => setActiveScreen('settings')}
                 className="mt-5 bg-zinc-950 hover:bg-zinc-800 text-white text-xs font-semibold rounded-xl py-2.5 px-4 active:scale-95 transition-all cursor-pointer"
               >
-                Nastavit produkty
+                {t('pos.emptyAction')}
               </button>
             </div>
           ) : (
@@ -142,7 +193,7 @@ function PosApp() {
                   {product.name}
                 </span>
                 <span className="text-sm font-medium text-zinc-500 mt-2 font-mono">
-                  {product.price.toLocaleString('cs-CZ')} Kč
+                  {formatCurrency(product.price)}
                 </span>
               </button>
             ))
@@ -164,6 +215,11 @@ function PosApp() {
         <SettingsScreen onClose={() => setActiveScreen('pos')} />
       )}
 
+      {/* STATISTICS VIEW COVER */}
+      {activeScreen === 'statistics' && (
+        <StatisticsScreen onClose={() => setActiveScreen('pos')} />
+      )}
+
       {/* PAYMENT MODAL FLOWS */}
       {paymentFlow.isOpen && (
         <PaymentModal
@@ -173,7 +229,7 @@ function PosApp() {
           shopName={settings.businessName}
           logo={settings.logo}
           onClose={() => setPaymentFlow({ isOpen: false, type: null })}
-          onConfirm={handleClearCart}
+          onConfirm={handleConfirmPayment}
         />
       )}
     </div>

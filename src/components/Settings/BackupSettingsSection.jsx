@@ -1,16 +1,9 @@
 import { useState, useRef } from 'react'
-import {
-  Download,
-  Upload,
-  Copy,
-  Check,
-  Trash2,
-  FileJson,
-  AlertCircle,
-} from 'lucide-react'
+import { Download, Upload, Copy, Check, Trash2 } from 'lucide-react'
 import DeleteConfirmModal from './DeleteConfirmModal.jsx'
 import { triggerHaptic } from '../../utils/paymentUtils.js'
 import { validateBackupPayload } from '../../services/storage/schemaValidator.js'
+import { useI18n } from '../../i18n/useI18n.js'
 
 export default function BackupSettingsSection({
   instance,
@@ -18,6 +11,7 @@ export default function BackupSettingsSection({
   onImport,
   onDeleteInstance,
 }) {
+  const { t } = useI18n()
   const [copied, setCopied] = useState(false)
   const [exportSuccess, setExportSuccess] = useState(false)
   const [importError, setImportError] = useState('')
@@ -32,7 +26,7 @@ export default function BackupSettingsSection({
       setExportSuccess(true)
       setTimeout(() => setExportSuccess(false), 3000)
     } catch (err) {
-      console.error('Export selhal:', err)
+      console.error('Export error:', err)
     }
   }
 
@@ -46,7 +40,7 @@ export default function BackupSettingsSection({
         setTimeout(() => setCopied(false), 2500)
       }
     } catch (err) {
-      console.error('Kopírování selhalo:', err)
+      console.error('Copy error:', err)
     }
   }
 
@@ -57,7 +51,7 @@ export default function BackupSettingsSection({
     if (!file) return
 
     if (!file.name.endsWith('.json')) {
-      setImportError('Vyberte prosím platný soubor zálohy s příponou .json.')
+      setImportError(t('backup.importError'))
       return
     }
 
@@ -71,7 +65,7 @@ export default function BackupSettingsSection({
         const validation = validateBackupPayload(parsed)
 
         if (!validation.valid || !validation.backup) {
-          setImportError(validation.error || 'Neplatná struktura zálohy.')
+          setImportError(validation.error || t('backup.importError'))
           return
         }
 
@@ -80,83 +74,73 @@ export default function BackupSettingsSection({
         setImportSuccess(true)
         setTimeout(() => setImportSuccess(false), 3000)
       } catch (err) {
-        setImportError(
-          err.message || 'Chyba při čtení nebo importování záložního souboru.'
-        )
+        setImportError(err.message || t('backup.importError'))
       }
     }
     reader.readAsText(file)
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Export / Backup instance card */}
-      <div className="bg-white border border-zinc-200 rounded-2xl p-5 shadow-sm shadow-zinc-100/50 flex flex-col gap-3">
-        <div className="flex items-center gap-2">
-          <FileJson size={18} className="text-zinc-700" />
-          <h4 className="text-xs font-bold text-zinc-900">
-            Zálohování a export instance
-          </h4>
+    <div className="flex flex-col gap-4">
+      {/* Export Card */}
+      <div className="bg-white border border-zinc-200/80 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col gap-3">
+        <div>
+          <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+            {t('backup.exportTitle')}
+          </h3>
+          <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
+            {t('backup.exportDesc')}
+          </p>
         </div>
-        <p className="text-xs text-zinc-500 leading-relaxed">
-          Stáhněte kompletní zálohu této pokladny ve formátu{' '}
-          <code className="font-mono bg-zinc-100 px-1 py-0.5 rounded text-zinc-700">
-            .json
-          </code>
-          . Záloha obsahuje název obchodu, bankovní údaje a veškeré produkty
-          včetně cenových pravidel.
-        </p>
 
-        <div className="flex flex-col sm:flex-row gap-2.5 mt-1">
+        <div className="flex flex-col sm:flex-row gap-2 pt-1">
           <button
             type="button"
             onClick={handleExport}
-            className="flex-1 bg-zinc-900 hover:bg-zinc-800 text-white font-bold py-3 px-4 rounded-xl text-xs transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2 shadow-sm"
+            className="flex-1 bg-zinc-900 hover:bg-zinc-800 text-white font-semibold py-2.5 px-4 rounded-xl text-xs transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-1.5"
           >
-            <Download size={15} />
-            <span>Stáhnout zálohu (.json)</span>
+            <Download size={14} />
+            <span>{t('backup.exportButton')} (.json)</span>
           </button>
 
           <button
             type="button"
             onClick={handleCopyJson}
-            className="border border-zinc-200 hover:bg-zinc-50 text-zinc-700 font-semibold py-3 px-4 rounded-xl text-xs transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-1.5"
-            title="Zkopírovat JSON do schránky"
+            className="border border-zinc-200 hover:bg-zinc-50 text-zinc-700 font-medium py-2.5 px-3.5 rounded-xl text-xs transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-1.5"
           >
             {copied ? (
               <>
                 <Check size={14} className="text-emerald-600" />
-                <span className="text-emerald-700 font-bold">Zkopírováno!</span>
+                <span className="text-emerald-700 font-semibold">
+                  {t('common.success')}
+                </span>
               </>
             ) : (
               <>
                 <Copy size={14} />
-                <span>Kopírovat JSON</span>
+                <span>JSON</span>
               </>
             )}
           </button>
         </div>
 
         {exportSuccess && (
-          <div className="text-[11px] text-emerald-700 font-semibold bg-emerald-50 border border-emerald-100 rounded-lg p-2 text-center">
-            Záloha byla úspěšně vygenerována a stažena.
+          <div className="text-xs text-emerald-800 font-medium bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 text-center">
+            {t('backup.importSuccess')}
           </div>
         )}
       </div>
 
-      {/* Import backup card */}
-      <div className="bg-white border border-zinc-200 rounded-2xl p-5 shadow-sm shadow-zinc-100/50 flex flex-col gap-3">
-        <h4 className="text-xs font-bold text-zinc-900 flex items-center gap-2">
-          <Upload size={16} />
-          Obnovit instanci ze zálohy
-        </h4>
-        <p className="text-xs text-zinc-500 leading-relaxed">
-          Nahrajte dříve exportovaný soubor{' '}
-          <code className="font-mono bg-zinc-100 px-1 py-0.5 rounded text-zinc-700">
-            .json
-          </code>
-          . Tímto krokem nahradíte stávající data pokladny daty ze zálohy.
-        </p>
+      {/* Import Card */}
+      <div className="bg-white border border-zinc-200/80 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col gap-3">
+        <div>
+          <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+            {t('backup.importTitle')}
+          </h3>
+          <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
+            {t('backup.importDesc')}
+          </p>
+        </div>
 
         <input
           ref={fileInputRef}
@@ -169,54 +153,49 @@ export default function BackupSettingsSection({
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className="border border-dashed border-zinc-300 hover:border-zinc-400 bg-zinc-50/50 text-zinc-700 font-semibold py-3 px-4 rounded-xl text-xs transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
+          className="border border-dashed border-zinc-200 hover:border-zinc-300 bg-zinc-50/50 hover:bg-zinc-50 text-zinc-700 font-medium py-2.5 px-4 rounded-xl text-xs transition-colors cursor-pointer flex items-center justify-center gap-2"
         >
-          <Upload size={15} />
-          <span>Vybrat soubor zálohy...</span>
+          <Upload size={14} />
+          <span>{t('backup.importButton')} (.json)</span>
         </button>
 
         {importError && (
-          <div className="flex items-start gap-1.5 text-xs text-red-700 bg-red-50 border border-red-100 rounded-xl p-3">
-            <AlertCircle size={15} className="shrink-0 mt-0.5" />
-            <span>{importError}</span>
+          <div className="text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded-xl p-2.5 font-medium">
+            {importError}
           </div>
         )}
 
         {importSuccess && (
-          <div className="text-xs text-emerald-800 font-semibold bg-emerald-50 border border-emerald-100 rounded-xl p-3 text-center">
-            Instance byla úspěšně obnovena ze zálohy!
+          <div className="text-xs text-emerald-800 font-medium bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 text-center">
+            {t('backup.importSuccess')}
           </div>
         )}
       </div>
 
-      {/* Permanent delete danger zone card */}
-      <div className="border border-red-200/80 bg-red-50/30 rounded-2xl p-5 flex flex-col gap-3">
-        <span className="text-[10px] font-bold text-red-600 uppercase tracking-wider">
-          Nebezpečná zóna
-        </span>
+      {/* Danger Zone Card */}
+      <div className="border border-rose-200/80 bg-white rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col gap-3">
         <div>
-          <h4 className="text-xs font-bold text-zinc-900">
-            Trvale smazat tuto instanci
-          </h4>
-          <p className="text-xs text-zinc-500 mt-0.5 leading-relaxed">
-            Vymaže veškeré produkty a nastavení. Pokladna bude resetována do
-            výchozího stavu.
+          <h3 className="text-xs font-semibold text-rose-600 uppercase tracking-wider">
+            {t('backup.deleteInstanceTitle')}
+          </h3>
+          <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
+            {t('backup.deleteInstanceDesc')}
           </p>
         </div>
 
         <button
           type="button"
           onClick={() => setIsDeleteModalOpen(true)}
-          className="bg-white hover:bg-red-50 text-red-600 border border-red-200 font-bold py-3 px-4 rounded-xl text-xs transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-1.5 w-full shadow-sm"
+          className="text-rose-600 hover:bg-rose-50 border border-rose-200 font-semibold py-2.5 px-4 rounded-xl text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 w-full"
         >
           <Trash2 size={14} />
-          <span>Trvale smazat instanci pokladny</span>
+          <span>{t('backup.deleteButton')}</span>
         </button>
       </div>
 
       {/* Delete Confirmation Modal */}
       <DeleteConfirmModal
-        merchantName={instance?.name || 'Moje Pokladna'}
+        merchantName={instance?.name || 'Pokladna'}
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={async () => {

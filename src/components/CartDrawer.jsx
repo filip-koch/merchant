@@ -9,6 +9,7 @@ import {
   AlertTriangle,
 } from 'lucide-react'
 import { getItemTotal } from '../utils/paymentUtils.js'
+import { useI18n } from '../i18n/useI18n.js'
 
 export default function CartDrawer({
   cart,
@@ -17,6 +18,7 @@ export default function CartDrawer({
   onSelectPayment,
   bankConfigured,
 }) {
+  const { t, formatCurrency } = useI18n()
   const [isOpen, setIsOpen] = useState(false)
 
   // Handle status bar blending when cart drawer is expanded (blurred backdrop active)
@@ -58,7 +60,7 @@ export default function CartDrawer({
     return (
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-zinc-100 pt-4 px-6 flex justify-center items-center gap-2 text-zinc-400 text-sm font-medium z-40 select-none shadow-[0_-4px_12px_rgba(0,0,0,0.03)] pb-safe animate-slide-up">
         <ShoppingBag size={18} strokeWidth={2} />
-        <span>Košík je prázdný</span>
+        <span>{t('cart.empty')}</span>
       </div>
     )
   }
@@ -103,19 +105,21 @@ export default function CartDrawer({
                 {totalItems}
               </span>
               <span className="font-semibold text-sm text-zinc-800">
-                {isOpen ? 'Položky v košíku' : 'Zobrazit košík'}
+                {isOpen ? t('cart.title') : t('cart.title')}
               </span>
             </div>
 
             <div className="flex items-center gap-3">
               {isOpen && (
-                <span className="text-xs text-zinc-400">K úhradě:</span>
+                <span className="text-xs text-zinc-400">
+                  {t('payment.amount')}:
+                </span>
               )}
               <span
                 key={totalPrice}
                 className="font-bold text-base text-zinc-900 animate-pop inline-block"
               >
-                {totalPrice.toLocaleString('cs-CZ')} Kč
+                {formatCurrency(totalPrice)}
               </span>
               <span className="text-zinc-400 transition-transform duration-200">
                 {isOpen ? (
@@ -143,12 +147,11 @@ export default function CartDrawer({
                       {item.name}
                     </span>
                     <span className="text-[11px] text-zinc-400">
-                      {item.price.toLocaleString('cs-CZ')} Kč/ks •{' '}
-                      {getItemTotal(item).toLocaleString('cs-CZ')} Kč
+                      {formatCurrency(item.price)} •{' '}
+                      {formatCurrency(getItemTotal(item))}
                       {getItemTotal(item) !== item.price * item.quantity && (
                         <span className="text-zinc-400 line-through ml-1.5">
-                          {(item.price * item.quantity).toLocaleString('cs-CZ')}{' '}
-                          Kč
+                          {formatCurrency(item.price * item.quantity)}
                         </span>
                       )}
                     </span>
@@ -161,7 +164,7 @@ export default function CartDrawer({
                           onUpdateQuantity(item.id, item.quantity - 1)
                         }
                         className="w-8 h-8 flex justify-center items-center text-zinc-500 hover:text-zinc-900 hover:bg-white rounded-lg transition-all text-sm font-semibold active:scale-90"
-                        aria-label="Snížit množství"
+                        aria-label="Decrease quantity"
                       >
                         -
                       </button>
@@ -173,7 +176,7 @@ export default function CartDrawer({
                           onUpdateQuantity(item.id, item.quantity + 1)
                         }
                         className="w-8 h-8 flex justify-center items-center text-zinc-500 hover:text-zinc-900 hover:bg-white rounded-lg transition-all text-sm font-semibold active:scale-90"
-                        aria-label="Zvýšit množství"
+                        aria-label="Increase quantity"
                       >
                         +
                       </button>
@@ -182,7 +185,7 @@ export default function CartDrawer({
                     <button
                       onClick={() => onRemoveItem(item.id)}
                       className="p-2 text-zinc-400 hover:text-zinc-900 active:scale-90 transition-colors"
-                      aria-label="Odstranit položku"
+                      aria-label="Remove item"
                     >
                       <Trash2 size={16} />
                     </button>
@@ -199,10 +202,7 @@ export default function CartDrawer({
                     size={14}
                     className="mt-0.5 shrink-0 text-amber-600"
                   />
-                  <span>
-                    Platby QR kódem nebudou fungovat bez vyplnění čísla
-                    bankovního účtu v nastavení.
-                  </span>
+                  <span>{t('cart.bankNotConfigured')}</span>
                 </div>
               )}
 
@@ -218,10 +218,10 @@ export default function CartDrawer({
                   />
                   <div className="text-left leading-none">
                     <span className="block text-sm font-bold text-zinc-800">
-                      Hotovost
+                      {t('cart.payCash')}
                     </span>
                     <span className="block text-[10px] opacity-75 mt-0.5 text-zinc-500 font-normal">
-                      Automaticky 10s
+                      10s
                     </span>
                   </div>
                 </button>
@@ -237,9 +237,11 @@ export default function CartDrawer({
                 >
                   <QrCode size={18} strokeWidth={2} />
                   <div className="text-left leading-none">
-                    <span className="block text-sm font-bold">QR Platba</span>
+                    <span className="block text-sm font-bold">
+                      {t('cart.payQr')}
+                    </span>
                     <span className="block text-[10px] opacity-75 mt-0.5 font-normal">
-                      {bankConfigured ? 'Standard SPAYD' : 'Nastavit účet'}
+                      {bankConfigured ? 'SPAYD' : t('settings.title')}
                     </span>
                   </div>
                 </button>

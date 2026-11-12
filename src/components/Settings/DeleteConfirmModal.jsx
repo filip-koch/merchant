@@ -1,5 +1,6 @@
 import { AlertTriangle, Trash2, X } from 'lucide-react'
 import { triggerHaptic } from '../../utils/paymentUtils.js'
+import { useI18n } from '../../i18n/useI18n.js'
 
 export default function DeleteConfirmModal({
   merchantName,
@@ -7,6 +8,8 @@ export default function DeleteConfirmModal({
   onClose,
   onConfirm,
 }) {
+  const { t } = useI18n()
+
   if (!isOpen) return null
 
   const handleConfirm = () => {
@@ -18,56 +21,49 @@ export default function DeleteConfirmModal({
     <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm animate-fade-in"
+        className="fixed inset-0 bg-black/40 backdrop-blur-xs animate-fade-in"
         onClick={onClose}
       />
 
       {/* Modal Dialog */}
-      <div className="relative bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-zinc-200 animate-scale-in z-10 flex flex-col gap-4">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 p-1.5 text-zinc-400 hover:text-zinc-600 rounded-full transition-colors cursor-pointer"
-          aria-label="Zavřít"
-        >
-          <X size={18} />
-        </button>
-
-        <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center">
-          <AlertTriangle size={24} strokeWidth={2} />
+      <div className="relative bg-white rounded-2xl max-w-sm w-full p-5 shadow-xl border border-zinc-200 animate-scale-in z-10 flex flex-col gap-3.5 select-none">
+        <div className="flex items-center justify-between">
+          <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+            <AlertTriangle size={20} strokeWidth={2} />
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1.5 text-zinc-400 hover:text-zinc-600 rounded-full transition-colors cursor-pointer"
+            aria-label={t('common.close')}
+          >
+            <X size={18} />
+          </button>
         </div>
 
         <div>
-          <h3 className="text-base font-extrabold text-zinc-900">
-            Trvale smazat instanci pokladny?
+          <h3 className="text-base font-semibold text-zinc-900">
+            {t('deleteConfirm.title')}
           </h3>
-          <p className="text-xs text-zinc-500 mt-1.5 leading-relaxed">
-            Opravdu chcete smazat instanci{' '}
-            <strong className="text-zinc-800">„{merchantName}“</strong>? Tato
-            akce je nevratná. Dojde k vymazání všech produktů, cenových pravidel
-            a nastavení pokladny.
+          <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
+            {t('deleteConfirm.desc')} ({merchantName})
           </p>
         </div>
 
-        <div className="bg-red-50/70 border border-red-100 rounded-xl p-3 text-[11px] text-red-800 leading-snug">
-          Tip: Před smazáním si můžete instanci zazálohovat kliknutím na
-          tlačítko <strong>„Exportovat zálohu (.json)“</strong>.
-        </div>
-
-        <div className="flex gap-2.5 pt-2">
+        <div className="flex gap-2 pt-2">
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 py-3 px-4 rounded-xl border border-zinc-200 text-zinc-700 font-bold text-xs hover:bg-zinc-50 active:scale-95 transition-all cursor-pointer"
+            className="flex-1 py-2.5 px-4 rounded-xl border border-zinc-200 text-zinc-700 font-semibold text-xs hover:bg-zinc-50 active:scale-95 transition-all cursor-pointer"
           >
-            Zrušit
+            {t('common.cancel')}
           </button>
           <button
             type="button"
             onClick={handleConfirm}
-            className="flex-1 py-3 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm shadow-red-200"
+            className="flex-1 py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5"
           >
             <Trash2 size={14} />
-            Ano, smazat
+            <span>{t('common.delete')}</span>
           </button>
         </div>
       </div>

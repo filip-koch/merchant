@@ -20,30 +20,30 @@ describe('qr-paygen handler', () => {
       account: '2000145399/0800',
       amount: 150.5,
       currency: 'CZK',
-      message: 'Kavárna Platba',
+      message: 'Platba za zbozi',
     })
 
     assert.ok(spayd.startsWith('SPD*1.0*'))
     assert.ok(spayd.includes('*AM:150.50*'))
     assert.ok(spayd.includes('*CC:CZK'))
-    assert.ok(spayd.includes('*MSG:KAVARNA PLATBA')) // Diacritics removed for SPAYD standard
+    assert.ok(spayd.includes('*MSG:PLATBA ZA ZBOZI')) // Diacritics removed for SPAYD standard
   })
 
   it('generates valid SVG with CBA frame and shop name', () => {
     const svg = toSvg({
       account: '2000145399/0800',
       amount: 250,
-      businessName: 'Kavárna Slunce',
+      businessName: 'Stánek Slunce',
       size: 400,
     })
 
     assert.ok(svg.startsWith('<svg'))
-    assert.ok(svg.includes('Kavárna Slunce'))
+    assert.ok(svg.includes('Stánek Slunce'))
     assert.ok(svg.includes('<!-- CBA QR Platba Frame'))
   })
 
   it('dynamically downscales font size for long shop names so it never overflows', () => {
-    const longName = 'Restaurace a Pivovarská Zahrada U Zlatého Lva a Rytíře'
+    const longName = 'Tradiční Řemeslný Stánek a Dílna U Zlatého Lva a Rytíře'
     const svgLong = toSvg({
       account: '2000145399/0800',
       amount: 100,
@@ -54,7 +54,7 @@ describe('qr-paygen handler', () => {
     const svgShort = toSvg({
       account: '2000145399/0800',
       amount: 100,
-      businessName: 'Kavárna',
+      businessName: 'Stánek',
       size: 500,
     })
 
