@@ -10,14 +10,10 @@ import {
   ChevronLeft,
 } from 'lucide-react'
 import { useMerchant } from '../../context/useMerchant.js'
+import { useI18n } from '../../i18n/useI18n.js'
 import EventModal from './EventModal.jsx'
 import ExpenseModal from './ExpenseModal.jsx'
-import {
-  categorizeSales,
-  formatDisplayDateTime,
-  formatDisplayDate,
-  formatDisplayTime,
-} from '../../utils/statisticsUtils.js'
+import { categorizeSales } from '../../utils/statisticsUtils.js'
 import { triggerHaptic } from '../../utils/paymentUtils.js'
 
 export default function StatisticsScreen({ onClose }) {
@@ -31,6 +27,15 @@ export default function StatisticsScreen({ onClose }) {
     deleteEventExpense,
   } = useMerchant()
 
+  const {
+    t,
+    formatCurrency,
+    formatDate,
+    formatDateTime,
+    formatTime,
+    language,
+  } = useI18n()
+
   // Tab state: { type: 'overview' } | { type: 'event', id: string } | { type: 'uncategorized', dateKey: string }
   const [activeTab, setActiveTab] = useState({ type: 'overview' })
 
@@ -40,10 +45,10 @@ export default function StatisticsScreen({ onClose }) {
   const [eventToDelete, setEventToDelete] = useState(null)
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false)
 
-  // Categorize sales across all events and uncategorized days
+  // Categorize sales across all events and uncategorized days using current language
   const categorizedData = useMemo(() => {
-    return categorizeSales(sales, events)
-  }, [sales, events])
+    return categorizeSales(sales, events, language)
+  }, [sales, events, language])
 
   const handleTabChange = (tab) => {
     triggerHaptic(10)
@@ -107,6 +112,12 @@ export default function StatisticsScreen({ onClose }) {
     )
   }, [activeTab, categorizedData])
 
+  const getStatusLabel = (status) => {
+    if (status === 'active') return t('statistics.statusActive')
+    if (status === 'upcoming') return t('statistics.statusUpcoming')
+    return t('statistics.statusEnded')
+  }
+
   return (
     <div className="fixed inset-0 bg-zinc-50 z-[100] flex flex-col overflow-hidden animate-slide-up select-none">
       {/* APP BAR / HEADER */}
@@ -116,7 +127,7 @@ export default function StatisticsScreen({ onClose }) {
             <button
               onClick={onClose}
               className="p-2 -ml-2 text-zinc-600 hover:text-zinc-950 hover:bg-zinc-100 rounded-full transition-all active:scale-95 cursor-pointer"
-              aria-label="Zpět do pokladny"
+              aria-label={t('statistics.backToRegister')}
             >
               <ArrowLeft size={20} />
             </button>
@@ -124,17 +135,18 @@ export default function StatisticsScreen({ onClose }) {
             <button
               onClick={() => handleTabChange({ type: 'overview' })}
               className="p-2 -ml-2 text-zinc-600 hover:text-zinc-950 hover:bg-zinc-100 rounded-full transition-all active:scale-95 cursor-pointer"
-              aria-label="Zpět na přehled"
+              aria-label={t('statistics.backToOverview')}
             >
               <ChevronLeft size={22} />
             </button>
           )}
           <h2 className="text-base font-semibold text-zinc-900 tracking-tight">
-            {activeTab.type === 'overview' && 'Statistiky a tržby'}
+            {activeTab.type === 'overview' && t('statistics.title')}
             {activeTab.type === 'event' &&
-              (activeEventData?.event?.name || 'Detail události')}
+              (activeEventData?.event?.name || t('statistics.eventDetail'))}
             {activeTab.type === 'uncategorized' &&
-              (activeUncategorizedData?.displayDate || 'Nezařazené')}
+              (activeUncategorizedData?.displayDate ||
+                t('statistics.uncategorized'))}
           </h2>
         </div>
 
@@ -143,7 +155,7 @@ export default function StatisticsScreen({ onClose }) {
           className="bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold rounded-full py-2 px-3.5 flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
         >
           <Plus size={14} strokeWidth={2.5} />
-          <span>Nová událost</span>
+          <span>{t('statistics.newEvent')}</span>
         </button>
       </header>
 
@@ -158,7 +170,7 @@ export default function StatisticsScreen({ onClose }) {
               : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200/70 hover:text-zinc-900'
           }`}
         >
-          Přehled
+          {t('statistics.tabOverview')}
         </button>
 
         {categorizedData.events.map(({ event, status }) => {
@@ -231,7 +243,7 @@ export default function StatisticsScreen({ onClose }) {
             {/* HERO BALANCE / PROFIT CARD (Banking aesthetic) */}
             <div className="bg-white rounded-2xl p-5 border border-zinc-200/80 shadow-xs">
               <span className="text-xs font-medium text-zinc-500 block text-center">
-                Celkový čistý zisk
+                {t('statistics.overallNetProfit')}
               </span>
               <div
                 className={`text-3xl sm:text-4xl font-semibold tracking-tight font-mono text-center mt-1.5 ${
@@ -241,36 +253,30 @@ export default function StatisticsScreen({ onClose }) {
                 }`}
               >
                 {categorizedData.overall.netProfit >= 0 ? '+' : ''}
-                {categorizedData.overall.netProfit.toLocaleString('cs-CZ')} Kč
+                {formatCurrency(categorizedData.overall.netProfit)}
               </div>
 
               {/* Financial metrics strip */}
               <div className="grid grid-cols-3 gap-2 mt-5 pt-4 border-t border-zinc-100 text-center">
                 <div>
                   <span className="text-[11px] text-zinc-400 block font-normal">
-                    Tržby
+                    {t('statistics.revenue')}
                   </span>
                   <span className="text-xs sm:text-sm font-semibold font-mono text-zinc-800 mt-0.5 block">
-                    {categorizedData.overall.totalRevenue.toLocaleString(
-                      'cs-CZ'
-                    )}{' '}
-                    Kč
+                    {formatCurrency(categorizedData.overall.totalRevenue)}
                   </span>
                 </div>
                 <div>
                   <span className="text-[11px] text-zinc-400 block font-normal">
-                    Výdaje
+                    {t('statistics.expenses')}
                   </span>
                   <span className="text-xs sm:text-sm font-semibold font-mono text-rose-600 mt-0.5 block">
-                    {categorizedData.overall.totalExpenses.toLocaleString(
-                      'cs-CZ'
-                    )}{' '}
-                    Kč
+                    {formatCurrency(categorizedData.overall.totalExpenses)}
                   </span>
                 </div>
                 <div>
                   <span className="text-[11px] text-zinc-400 block font-normal">
-                    Zisková marže
+                    {t('statistics.profitMargin')}
                   </span>
                   <span className="text-xs sm:text-sm font-semibold font-mono text-zinc-800 mt-0.5 block">
                     {categorizedData.overall.profitMargin} %
@@ -281,21 +287,24 @@ export default function StatisticsScreen({ onClose }) {
               {/* Payment methods line */}
               <div className="mt-3 pt-3 border-t border-zinc-100 flex items-center justify-between text-xs text-zinc-500 px-1">
                 <span>
-                  Hotovost:{' '}
+                  {t('statistics.cash')}:{' '}
                   <strong className="font-semibold text-zinc-700 font-mono">
-                    {categorizedData.overall.cashTotal.toLocaleString('cs-CZ')}{' '}
-                    Kč
+                    {formatCurrency(categorizedData.overall.cashTotal)}
                   </strong>
                 </span>
                 <span className="text-zinc-300">•</span>
                 <span>
-                  QR platba:{' '}
+                  {t('statistics.qr')}:{' '}
                   <strong className="font-semibold text-zinc-700 font-mono">
-                    {categorizedData.overall.qrTotal.toLocaleString('cs-CZ')} Kč
+                    {formatCurrency(categorizedData.overall.qrTotal)}
                   </strong>
                 </span>
                 <span className="text-zinc-300">•</span>
-                <span>{categorizedData.overall.salesCount} nákupů</span>
+                <span>
+                  {t('statistics.salesCountSuffix', {
+                    count: categorizedData.overall.salesCount,
+                  })}
+                </span>
               </div>
             </div>
 
@@ -303,31 +312,30 @@ export default function StatisticsScreen({ onClose }) {
             <div>
               <div className="flex items-center justify-between mb-2.5 px-1">
                 <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-                  Události ({events.length})
+                  {t('statistics.eventsCount', { count: events.length })}
                 </h3>
                 <button
                   onClick={handleOpenAddEvent}
                   className="text-xs font-semibold text-zinc-800 hover:text-black flex items-center gap-1 cursor-pointer"
                 >
                   <Plus size={13} />
-                  <span>Přidat</span>
+                  <span>{t('statistics.add')}</span>
                 </button>
               </div>
 
               {categorizedData.events.length === 0 ? (
                 <div className="py-8 px-4 text-center rounded-2xl bg-white border border-zinc-200/80">
                   <p className="text-xs font-medium text-zinc-600">
-                    Zatím nemáte vytvořené žádné události
+                    {t('statistics.noEvents')}
                   </p>
                   <p className="text-xs text-zinc-400 max-w-xs mx-auto mt-1">
-                    Vytvořte např. festival nebo trh a prodeje v daném období se
-                    roztřídí automaticky.
+                    {t('statistics.noEventsDesc')}
                   </p>
                   <button
                     onClick={handleOpenAddEvent}
                     className="mt-3.5 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold px-4 py-2 rounded-full transition-all cursor-pointer"
                   >
-                    Vytvořit událost
+                    {t('statistics.createEvent')}
                   </button>
                 </div>
               ) : (
@@ -349,21 +357,15 @@ export default function StatisticsScreen({ onClose }) {
                                 ? 'bg-blue-500'
                                 : 'bg-zinc-300'
                           }`}
-                          title={
-                            status === 'active'
-                              ? 'Právě probíhá'
-                              : status === 'upcoming'
-                                ? 'Nadcházející'
-                                : 'Ukončeno'
-                          }
+                          title={getStatusLabel(status)}
                         />
                         <div className="min-w-0">
                           <h4 className="font-semibold text-sm text-zinc-900 truncate">
                             {event.name}
                           </h4>
                           <span className="text-xs text-zinc-400 block truncate">
-                            {formatDisplayDate(event.startDateTime)} –{' '}
-                            {formatDisplayDate(event.endDateTime)}
+                            {formatDate(event.startDateTime)} –{' '}
+                            {formatDate(event.endDateTime)}
                           </span>
                         </div>
                       </div>
@@ -378,10 +380,12 @@ export default function StatisticsScreen({ onClose }) {
                             }`}
                           >
                             {summary.netProfit >= 0 ? '+' : ''}
-                            {summary.netProfit.toLocaleString('cs-CZ')} Kč
+                            {formatCurrency(summary.netProfit)}
                           </span>
                           <span className="text-[11px] text-zinc-400 block">
-                            {summary.salesCount} nákupů
+                            {t('statistics.salesCountSuffix', {
+                              count: summary.salesCount,
+                            })}
                           </span>
                         </div>
                         <ChevronRight
@@ -400,7 +404,9 @@ export default function StatisticsScreen({ onClose }) {
               <div>
                 <div className="mb-2.5 px-1">
                   <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-                    Nezařazené dny ({categorizedData.uncategorizedDays.length})
+                    {t('statistics.uncategorizedDaysCount', {
+                      count: categorizedData.uncategorizedDays.length,
+                    })}
                   </h3>
                 </div>
 
@@ -425,14 +431,16 @@ export default function StatisticsScreen({ onClose }) {
                             {day.displayDate}
                           </span>
                           <span className="text-xs text-zinc-400 block">
-                            {day.sales.length} nákupů mimo událost
+                            {t('statistics.salesCountOutsideEvent', {
+                              count: day.sales.length,
+                            })}
                           </span>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-2.5 shrink-0 text-right">
                         <span className="text-sm font-mono font-semibold text-zinc-900">
-                          {day.summary.totalRevenue.toLocaleString('cs-CZ')} Kč
+                          {formatCurrency(day.summary.totalRevenue)}
                         </span>
                         <ChevronRight
                           size={16}
@@ -449,7 +457,7 @@ export default function StatisticsScreen({ onClose }) {
             {categorizedData.overall.itemBreakdown.length > 0 && (
               <div>
                 <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2.5 px-1">
-                  Položky podle tržeb
+                  {t('statistics.itemsByRevenue')}
                 </h3>
 
                 <div className="bg-white rounded-2xl border border-zinc-200/80 divide-y divide-zinc-100 overflow-hidden shadow-xs">
@@ -467,7 +475,7 @@ export default function StatisticsScreen({ onClose }) {
                         </span>
                       </div>
                       <span className="font-mono font-semibold text-zinc-900 shrink-0">
-                        {item.total.toLocaleString('cs-CZ')} Kč
+                        {formatCurrency(item.total)}
                       </span>
                     </div>
                   ))}
@@ -478,12 +486,14 @@ export default function StatisticsScreen({ onClose }) {
             {/* RECENT SALES */}
             <div>
               <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2.5 px-1">
-                Poslední nákupy ({categorizedData.allSalesSorted.length})
+                {t('statistics.recentSalesCount', {
+                  count: categorizedData.allSalesSorted.length,
+                })}
               </h3>
 
               {categorizedData.allSalesSorted.length === 0 ? (
                 <div className="py-8 text-center text-zinc-400 text-xs bg-white rounded-2xl border border-zinc-200/80">
-                  Zatím nebyl dokončen žádný nákup.
+                  {t('statistics.noSalesCompleted')}
                 </div>
               ) : (
                 <div className="bg-white rounded-2xl border border-zinc-200/80 divide-y divide-zinc-100 overflow-hidden shadow-xs">
@@ -495,12 +505,12 @@ export default function StatisticsScreen({ onClose }) {
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 mb-0.5">
                           <span className="text-zinc-400 text-[11px]">
-                            {formatDisplayDateTime(sale.timestamp || sale.date)}
+                            {formatDateTime(sale.timestamp || sale.date)}
                           </span>
                           <span className="text-[10px] text-zinc-500 bg-zinc-100 px-1.5 py-0.5 rounded">
                             {sale.paymentType === 'qr'
-                              ? 'QR platba'
-                              : 'Hotovost'}
+                              ? t('statistics.qr')
+                              : t('statistics.cash')}
                           </span>
                         </div>
                         <p className="text-zinc-600 text-xs truncate">
@@ -508,12 +518,12 @@ export default function StatisticsScreen({ onClose }) {
                             ? sale.items
                                 .map((it) => `${it.quantity}× ${it.name}`)
                                 .join(', ')
-                            : 'Nákup'}
+                            : t('statistics.purchase')}
                         </p>
                       </div>
 
                       <span className="font-mono font-semibold text-sm text-zinc-900 shrink-0">
-                        {sale.totalAmount.toLocaleString('cs-CZ')} Kč
+                        {formatCurrency(sale.totalAmount)}
                       </span>
                     </div>
                   ))}
@@ -541,11 +551,7 @@ export default function StatisticsScreen({ onClose }) {
                       }`}
                     />
                     <span className="text-zinc-500 font-medium">
-                      {activeEventData.status === 'active'
-                        ? 'Právě probíhá'
-                        : activeEventData.status === 'upcoming'
-                          ? 'Nadcházející'
-                          : 'Ukončeno'}
+                      {getStatusLabel(activeEventData.status)}
                     </span>
                   </div>
 
@@ -556,11 +562,8 @@ export default function StatisticsScreen({ onClose }) {
                   <div className="flex items-center gap-1.5 text-xs text-zinc-400 mt-1">
                     <Clock size={12} />
                     <span>
-                      {formatDisplayDateTime(
-                        activeEventData.event.startDateTime
-                      )}{' '}
-                      –{' '}
-                      {formatDisplayDateTime(activeEventData.event.endDateTime)}
+                      {formatDateTime(activeEventData.event.startDateTime)} –{' '}
+                      {formatDateTime(activeEventData.event.endDateTime)}
                     </span>
                   </div>
                 </div>
@@ -569,16 +572,16 @@ export default function StatisticsScreen({ onClose }) {
                   <button
                     onClick={() => handleOpenEditEvent(activeEventData.event)}
                     className="p-2 rounded-xl text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 transition-colors cursor-pointer"
-                    title="Upravit událost"
-                    aria-label="Upravit událost"
+                    title={t('statistics.editEventTooltip')}
+                    aria-label={t('statistics.editEventTooltip')}
                   >
                     <Edit2 size={16} />
                   </button>
                   <button
                     onClick={() => setEventToDelete(activeEventData.event)}
                     className="p-2 rounded-xl text-zinc-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                    title="Smazat událost"
-                    aria-label="Smazat událost"
+                    title={t('statistics.deleteEventTooltip')}
+                    aria-label={t('statistics.deleteEventTooltip')}
                   >
                     <Trash2 size={16} />
                   </button>
@@ -588,7 +591,7 @@ export default function StatisticsScreen({ onClose }) {
               {/* Dynamic Financial Overview */}
               <div className="mt-5 pt-4 border-t border-zinc-100">
                 <span className="text-xs font-medium text-zinc-500 block text-center">
-                  Čistý zisk události
+                  {t('statistics.eventNetProfit')}
                 </span>
                 <div
                   className={`text-2xl sm:text-3xl font-semibold tracking-tight font-mono text-center mt-1 ${
@@ -598,35 +601,29 @@ export default function StatisticsScreen({ onClose }) {
                   }`}
                 >
                   {activeEventData.summary.netProfit >= 0 ? '+' : ''}
-                  {activeEventData.summary.netProfit.toLocaleString('cs-CZ')} Kč
+                  {formatCurrency(activeEventData.summary.netProfit)}
                 </div>
 
                 <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-zinc-100 text-center">
                   <div>
                     <span className="text-[11px] text-zinc-400 block font-normal">
-                      Tržba
+                      {t('statistics.eventRevenue')}
                     </span>
                     <span className="text-xs sm:text-sm font-semibold font-mono text-zinc-800 mt-0.5 block">
-                      {activeEventData.summary.totalRevenue.toLocaleString(
-                        'cs-CZ'
-                      )}{' '}
-                      Kč
+                      {formatCurrency(activeEventData.summary.totalRevenue)}
                     </span>
                   </div>
                   <div>
                     <span className="text-[11px] text-zinc-400 block font-normal">
-                      Výdaje
+                      {t('statistics.expenses')}
                     </span>
                     <span className="text-xs sm:text-sm font-semibold font-mono text-rose-600 mt-0.5 block">
-                      {activeEventData.summary.totalExpenses.toLocaleString(
-                        'cs-CZ'
-                      )}{' '}
-                      Kč
+                      {formatCurrency(activeEventData.summary.totalExpenses)}
                     </span>
                   </div>
                   <div>
                     <span className="text-[11px] text-zinc-400 block font-normal">
-                      Marže
+                      {t('statistics.margin')}
                     </span>
                     <span className="text-xs sm:text-sm font-semibold font-mono text-zinc-800 mt-0.5 block">
                       {activeEventData.summary.profitMargin} %
@@ -636,24 +633,24 @@ export default function StatisticsScreen({ onClose }) {
 
                 <div className="mt-3 pt-3 border-t border-zinc-100 flex items-center justify-between text-xs text-zinc-500 px-1">
                   <span>
-                    Hotovost:{' '}
+                    {t('statistics.cash')}:{' '}
                     <strong className="font-semibold text-zinc-700 font-mono">
-                      {activeEventData.summary.cashTotal.toLocaleString(
-                        'cs-CZ'
-                      )}{' '}
-                      Kč
+                      {formatCurrency(activeEventData.summary.cashTotal)}
                     </strong>
                   </span>
                   <span className="text-zinc-300">•</span>
                   <span>
-                    QR:{' '}
+                    {t('statistics.qrShort')}:{' '}
                     <strong className="font-semibold text-zinc-700 font-mono">
-                      {activeEventData.summary.qrTotal.toLocaleString('cs-CZ')}{' '}
-                      Kč
+                      {formatCurrency(activeEventData.summary.qrTotal)}
                     </strong>
                   </span>
                   <span className="text-zinc-300">•</span>
-                  <span>{activeEventData.summary.salesCount} nákupů</span>
+                  <span>
+                    {t('statistics.salesCountSuffix', {
+                      count: activeEventData.summary.salesCount,
+                    })}
+                  </span>
                 </div>
               </div>
             </div>
@@ -662,20 +659,22 @@ export default function StatisticsScreen({ onClose }) {
             <div>
               <div className="flex items-center justify-between mb-2.5 px-1">
                 <h4 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-                  Výdaje a náklady ({activeEventData.summary.expenses.length})
+                  {t('statistics.eventExpenses', {
+                    count: activeEventData.summary.expenses.length,
+                  })}
                 </h4>
                 <button
                   onClick={() => setIsExpenseModalOpen(true)}
                   className="text-xs font-semibold text-zinc-800 hover:text-black flex items-center gap-1 cursor-pointer"
                 >
                   <Plus size={13} />
-                  <span>Přidat výdaj</span>
+                  <span>{t('statistics.addExpense')}</span>
                 </button>
               </div>
 
               {activeEventData.summary.expenses.length === 0 ? (
                 <div className="py-6 px-4 text-center rounded-2xl bg-white border border-zinc-200/80 text-xs text-zinc-400">
-                  K této události zatím nebyly zadány žádné výdaje.
+                  {t('statistics.noExpenses')}
                 </div>
               ) : (
                 <div className="bg-white rounded-2xl border border-zinc-200/80 divide-y divide-zinc-100 overflow-hidden shadow-xs">
@@ -689,19 +688,19 @@ export default function StatisticsScreen({ onClose }) {
                           {expense.name}
                         </span>
                         <span className="text-[11px] text-zinc-400">
-                          {formatDisplayDate(expense.createdAt)}
+                          {formatDate(expense.createdAt)}
                         </span>
                       </div>
 
                       <div className="flex items-center gap-2.5 shrink-0">
                         <span className="font-mono font-semibold text-rose-600">
-                          -{expense.amount.toLocaleString('cs-CZ')} Kč
+                          -{formatCurrency(expense.amount)}
                         </span>
                         <button
                           onClick={() => handleDeleteExpense(expense.id)}
                           className="p-1.5 text-zinc-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                          title="Smazat výdaj"
-                          aria-label="Smazat výdaj"
+                          title={t('statistics.deleteExpenseTooltip')}
+                          aria-label={t('statistics.deleteExpenseTooltip')}
                         >
                           <Trash2 size={14} />
                         </button>
@@ -716,7 +715,7 @@ export default function StatisticsScreen({ onClose }) {
             {activeEventData.summary.itemBreakdown.length > 0 && (
               <div>
                 <h4 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2.5 px-1">
-                  Prodané položky
+                  {t('statistics.itemsSold')}
                 </h4>
 
                 <div className="bg-white rounded-2xl border border-zinc-200/80 divide-y divide-zinc-100 overflow-hidden shadow-xs">
@@ -734,7 +733,7 @@ export default function StatisticsScreen({ onClose }) {
                         </span>
                       </div>
                       <span className="font-mono font-semibold text-zinc-900 shrink-0">
-                        {item.total.toLocaleString('cs-CZ')} Kč
+                        {formatCurrency(item.total)}
                       </span>
                     </div>
                   ))}
@@ -745,12 +744,14 @@ export default function StatisticsScreen({ onClose }) {
             {/* Event Sales List */}
             <div>
               <h4 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2.5 px-1">
-                Jednotlivé nákupy ({activeEventData.sales.length})
+                {t('statistics.salesListCount', {
+                  count: activeEventData.sales.length,
+                })}
               </h4>
 
               {activeEventData.sales.length === 0 ? (
                 <div className="py-8 px-4 text-center rounded-2xl bg-white border border-zinc-200/80 text-xs text-zinc-400">
-                  V době této události zatím neproběhl žádný nákup.
+                  {t('statistics.noEventSales')}
                 </div>
               ) : (
                 <div className="bg-white rounded-2xl border border-zinc-200/80 divide-y divide-zinc-100 overflow-hidden shadow-xs">
@@ -762,12 +763,12 @@ export default function StatisticsScreen({ onClose }) {
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 mb-0.5">
                           <span className="text-zinc-400 text-[11px]">
-                            {formatDisplayDateTime(sale.timestamp || sale.date)}
+                            {formatDateTime(sale.timestamp || sale.date)}
                           </span>
                           <span className="text-[10px] text-zinc-500 bg-zinc-100 px-1.5 py-0.5 rounded">
                             {sale.paymentType === 'qr'
-                              ? 'QR platba'
-                              : 'Hotovost'}
+                              ? t('statistics.qr')
+                              : t('statistics.cash')}
                           </span>
                         </div>
                         <p className="text-zinc-600 text-xs truncate">
@@ -775,12 +776,12 @@ export default function StatisticsScreen({ onClose }) {
                             ? sale.items
                                 .map((it) => `${it.quantity}× ${it.name}`)
                                 .join(', ')
-                            : 'Nákup'}
+                            : t('statistics.purchase')}
                         </p>
                       </div>
 
                       <span className="font-mono font-semibold text-sm text-zinc-900 shrink-0">
-                        {sale.totalAmount.toLocaleString('cs-CZ')} Kč
+                        {formatCurrency(sale.totalAmount)}
                       </span>
                     </div>
                   ))}
@@ -795,7 +796,7 @@ export default function StatisticsScreen({ onClose }) {
           <div className="space-y-6 animate-fade-in">
             <div className="bg-white rounded-2xl p-5 border border-zinc-200/80 shadow-xs">
               <span className="text-xs text-zinc-400 block font-medium">
-                Nezařazené prodeje
+                {t('statistics.uncategorizedSales')}
               </span>
               <h3 className="text-xl font-bold text-zinc-900 tracking-tight mt-0.5">
                 {activeUncategorizedData.displayDate}
@@ -803,38 +804,33 @@ export default function StatisticsScreen({ onClose }) {
 
               <div className="mt-4 pt-4 border-t border-zinc-100">
                 <span className="text-xs font-medium text-zinc-500 block text-center">
-                  Tržba dne
+                  {t('statistics.dayRevenue')}
                 </span>
                 <div className="text-2xl sm:text-3xl font-semibold tracking-tight font-mono text-center text-zinc-900 mt-1">
-                  {activeUncategorizedData.summary.totalRevenue.toLocaleString(
-                    'cs-CZ'
-                  )}{' '}
-                  Kč
+                  {formatCurrency(activeUncategorizedData.summary.totalRevenue)}
                 </div>
 
                 <div className="mt-3 pt-3 border-t border-zinc-100 flex items-center justify-between text-xs text-zinc-500 px-1">
                   <span>
-                    Hotovost:{' '}
+                    {t('statistics.cash')}:{' '}
                     <strong className="font-semibold text-zinc-700 font-mono">
-                      {activeUncategorizedData.summary.cashTotal.toLocaleString(
-                        'cs-CZ'
-                      )}{' '}
-                      Kč
+                      {formatCurrency(
+                        activeUncategorizedData.summary.cashTotal
+                      )}
                     </strong>
                   </span>
                   <span className="text-zinc-300">•</span>
                   <span>
-                    QR:{' '}
+                    {t('statistics.qrShort')}:{' '}
                     <strong className="font-semibold text-zinc-700 font-mono">
-                      {activeUncategorizedData.summary.qrTotal.toLocaleString(
-                        'cs-CZ'
-                      )}{' '}
-                      Kč
+                      {formatCurrency(activeUncategorizedData.summary.qrTotal)}
                     </strong>
                   </span>
                   <span className="text-zinc-300">•</span>
                   <span>
-                    {activeUncategorizedData.summary.salesCount} nákupů
+                    {t('statistics.salesCountSuffix', {
+                      count: activeUncategorizedData.summary.salesCount,
+                    })}
                   </span>
                 </div>
               </div>
@@ -844,7 +840,9 @@ export default function StatisticsScreen({ onClose }) {
             {activeUncategorizedData.summary.itemBreakdown.length > 0 && (
               <div>
                 <h4 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2.5 px-1">
-                  Prodané položky ({activeUncategorizedData.displayDate})
+                  {t('statistics.itemsSoldDay', {
+                    date: activeUncategorizedData.displayDate,
+                  })}
                 </h4>
 
                 <div className="bg-white rounded-2xl border border-zinc-200/80 divide-y divide-zinc-100 overflow-hidden shadow-xs">
@@ -862,7 +860,7 @@ export default function StatisticsScreen({ onClose }) {
                         </span>
                       </div>
                       <span className="font-mono font-semibold text-zinc-900 shrink-0">
-                        {item.total.toLocaleString('cs-CZ')} Kč
+                        {formatCurrency(item.total)}
                       </span>
                     </div>
                   ))}
@@ -873,7 +871,9 @@ export default function StatisticsScreen({ onClose }) {
             {/* Uncategorized Day Sales List */}
             <div>
               <h4 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2.5 px-1">
-                Seznam nákupů ({activeUncategorizedData.sales.length})
+                {t('statistics.uncategorizedSalesListCount', {
+                  count: activeUncategorizedData.sales.length,
+                })}
               </h4>
 
               <div className="bg-white rounded-2xl border border-zinc-200/80 divide-y divide-zinc-100 overflow-hidden shadow-xs">
@@ -885,10 +885,12 @@ export default function StatisticsScreen({ onClose }) {
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
                         <span className="text-zinc-400 text-[11px]">
-                          {formatDisplayTime(sale.timestamp || sale.date)}
+                          {formatTime(sale.timestamp || sale.date)}
                         </span>
                         <span className="text-[10px] text-zinc-500 bg-zinc-100 px-1.5 py-0.5 rounded">
-                          {sale.paymentType === 'qr' ? 'QR platba' : 'Hotovost'}
+                          {sale.paymentType === 'qr'
+                            ? t('statistics.qr')
+                            : t('statistics.cash')}
                         </span>
                       </div>
                       <p className="text-zinc-600 text-xs truncate">
@@ -896,12 +898,12 @@ export default function StatisticsScreen({ onClose }) {
                           ? sale.items
                               .map((it) => `${it.quantity}× ${it.name}`)
                               .join(', ')
-                          : 'Nákup'}
+                          : t('statistics.purchase')}
                       </p>
                     </div>
 
                     <span className="font-mono font-semibold text-sm text-zinc-900 shrink-0">
-                      {sale.totalAmount.toLocaleString('cs-CZ')} Kč
+                      {formatCurrency(sale.totalAmount)}
                     </span>
                   </div>
                 ))}
@@ -925,7 +927,7 @@ export default function StatisticsScreen({ onClose }) {
       {/* EXPENSE FORM MODAL */}
       <ExpenseModal
         isOpen={isExpenseModalOpen}
-        eventName={activeEventData?.event?.name || 'Událost'}
+        eventName={activeEventData?.event?.name || t('statistics.eventName')}
         onClose={() => setIsExpenseModalOpen(false)}
         onSave={handleSaveExpense}
       />
@@ -940,11 +942,12 @@ export default function StatisticsScreen({ onClose }) {
           <div className="relative bg-white rounded-2xl max-w-sm w-full p-5 shadow-xl border border-zinc-200 animate-scale-in z-10 flex flex-col gap-3">
             <div>
               <h3 className="text-base font-semibold text-zinc-900">
-                Smazat událost „{eventToDelete.name}“?
+                {t('statistics.deleteEventModalTitle', {
+                  name: eventToDelete.name,
+                })}
               </h3>
               <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
-                Prodeje z této události se automaticky přesunou do nezařazených
-                prodejů podle dnů.
+                {t('statistics.deleteEventModalDesc')}
               </p>
             </div>
 
@@ -954,14 +957,14 @@ export default function StatisticsScreen({ onClose }) {
                 onClick={() => setEventToDelete(null)}
                 className="flex-1 py-2.5 px-4 rounded-xl border border-zinc-200 text-zinc-700 font-semibold text-xs hover:bg-zinc-50 active:scale-95 transition-all cursor-pointer"
               >
-                Zrušit
+                {t('common.cancel')}
               </button>
               <button
                 type="button"
                 onClick={handleDeleteEvent}
                 className="flex-1 py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs active:scale-95 transition-all cursor-pointer"
               >
-                Smazat
+                {t('common.delete')}
               </button>
             </div>
           </div>

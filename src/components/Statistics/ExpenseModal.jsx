@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
 import { triggerHaptic } from '../../utils/paymentUtils.js'
+import { useI18n } from '../../i18n/useI18n.js'
 
 function ExpenseModalContent({ eventName, onClose, onSave }) {
+  const { t } = useI18n()
   const [name, setName] = useState('')
   const [amount, setAmount] = useState('')
   const [error, setError] = useState('')
@@ -13,13 +15,13 @@ function ExpenseModalContent({ eventName, onClose, onSave }) {
 
     const trimmedName = name.trim()
     if (!trimmedName) {
-      setError('Zadejte prosím název výdaje.')
+      setError(t('expenseModal.missingName'))
       return
     }
 
     const numAmount = parseFloat(amount)
     if (isNaN(numAmount) || numAmount <= 0) {
-      setError('Zadejte prosím platnou kladnou částku.')
+      setError(t('expenseModal.invalidAmount'))
       return
     }
 
@@ -32,7 +34,7 @@ function ExpenseModalContent({ eventName, onClose, onSave }) {
       })
       onClose()
     } catch (err) {
-      setError(err.message || 'Nepodařilo se uložit výdaj.')
+      setError(err.message || t('common.error'))
     }
   }
 
@@ -50,7 +52,7 @@ function ExpenseModalContent({ eventName, onClose, onSave }) {
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-base font-semibold text-zinc-900 leading-tight">
-              Přidat výdaj
+              {t('expenseModal.title')}
             </h3>
             <p className="text-xs text-zinc-400 mt-0.5 truncate max-w-[220px]">
               {eventName}
@@ -59,7 +61,7 @@ function ExpenseModalContent({ eventName, onClose, onSave }) {
           <button
             onClick={onClose}
             className="p-1.5 text-zinc-400 hover:text-zinc-700 rounded-full transition-colors cursor-pointer"
-            aria-label="Zavřít"
+            aria-label={t('common.close')}
           >
             <X size={18} />
           </button>
@@ -75,13 +77,13 @@ function ExpenseModalContent({ eventName, onClose, onSave }) {
           {/* Expense Name */}
           <div>
             <label className="block text-xs font-medium text-zinc-700 mb-1">
-              Název výdaje
+              {t('expenseModal.nameLabel')}
             </label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="např. Pronájem stánku, doprava..."
+              placeholder={t('expenseModal.namePlaceholder')}
               maxLength={100}
               className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 focus:outline-none focus:border-zinc-900 text-sm font-medium text-zinc-900 bg-zinc-50/50 transition-all"
               autoFocus
@@ -91,7 +93,7 @@ function ExpenseModalContent({ eventName, onClose, onSave }) {
           {/* Amount */}
           <div>
             <label className="block text-xs font-medium text-zinc-700 mb-1">
-              Částka výdaje (Kč)
+              {t('expenseModal.amountLabel')}
             </label>
             <input
               type="number"
@@ -99,7 +101,7 @@ function ExpenseModalContent({ eventName, onClose, onSave }) {
               step="any"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              placeholder="např. 1500"
+              placeholder={t('expenseModal.amountPlaceholder')}
               className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 focus:outline-none focus:border-zinc-900 text-sm font-medium text-zinc-900 bg-zinc-50/50 transition-all font-mono"
             />
           </div>
@@ -111,13 +113,13 @@ function ExpenseModalContent({ eventName, onClose, onSave }) {
               onClick={onClose}
               className="flex-1 py-2.5 px-4 rounded-xl border border-zinc-200 text-zinc-700 font-semibold text-xs hover:bg-zinc-50 active:scale-95 transition-all cursor-pointer"
             >
-              Zrušit
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
               className="flex-1 py-2.5 px-4 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white font-semibold text-xs active:scale-95 transition-all cursor-pointer"
             >
-              Přidat výdaj
+              {t('expenseModal.submit')}
             </button>
           </div>
         </form>

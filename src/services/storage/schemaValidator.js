@@ -99,6 +99,8 @@ export function validateSettings(settings) {
     }
   }
 
+  const language = raw.language === 'en' ? 'en' : 'cs'
+
   return {
     valid: true,
     settings: {
@@ -107,6 +109,7 @@ export function validateSettings(settings) {
       bankId,
       logo,
       currency: 'CZK',
+      language,
     },
   }
 }
@@ -333,6 +336,7 @@ export function validateBackupPayload(rawData) {
     businessName: data.merchant?.name || data.businessName || 'Pokladna',
     accountNumber: data.bankInfo?.accountNumber || data.accountNumber || '',
     bankId: data.bankInfo?.bankId || data.bankId || '',
+    language: data.settings?.language || 'cs',
   }
 
   const settingsValidation = validateSettings(rawSettings)

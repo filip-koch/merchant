@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Plus, Trash2, Code2, Pencil, X, Check } from 'lucide-react'
 import { triggerHaptic } from '../../utils/paymentUtils.js'
+import { useI18n } from '../../i18n/useI18n.js'
 
 export default function ProductsSettingsSection({
   products,
@@ -8,6 +9,8 @@ export default function ProductsSettingsSection({
   onUpdateProduct,
   onDeleteProduct,
 }) {
+  const { t, formatCurrency } = useI18n()
+
   const [newItemName, setNewItemName] = useState('')
   const [newItemPrice, setNewItemPrice] = useState('')
   const [newItemScript, setNewItemScript] = useState('')
@@ -43,12 +46,12 @@ export default function ProductsSettingsSection({
     const price = parseFloat(newItemPrice)
 
     if (!name) {
-      setError('Zadejte název produktu.')
+      setError(t('eventModal.missingName'))
       return
     }
 
     if (isNaN(price) || price <= 0) {
-      setError('Cena musí být kladné číslo.')
+      setError(t('expenseModal.invalidAmount'))
       return
     }
 
@@ -93,7 +96,9 @@ export default function ProductsSettingsSection({
       >
         <div className="flex justify-between items-center">
           <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-            {editingProductId ? 'Upravit produkt' : 'Přidat nový produkt'}
+            {editingProductId
+              ? t('products.editProductTitle')
+              : t('products.newProductTitle')}
           </h3>
           {editingProductId && (
             <button
@@ -102,17 +107,19 @@ export default function ProductsSettingsSection({
               className="text-xs text-zinc-500 hover:text-zinc-900 flex items-center gap-1 cursor-pointer font-medium"
             >
               <X size={13} />
-              Zrušit
+              {t('common.cancel')}
             </button>
           )}
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <div className="flex-1 flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-zinc-700">Název</label>
+            <label className="text-xs font-medium text-zinc-700">
+              {t('products.name')}
+            </label>
             <input
               type="text"
-              placeholder="např. Výrobek"
+              placeholder={t('products.namePlaceholder')}
               value={newItemName}
               onChange={(e) => setNewItemName(e.target.value)}
               className="bg-zinc-50/50 border border-zinc-200 rounded-xl px-3.5 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-zinc-900 transition-all font-medium"
@@ -122,12 +129,12 @@ export default function ProductsSettingsSection({
 
           <div className="sm:w-32 flex flex-col gap-1.5">
             <label className="text-xs font-medium text-zinc-700">
-              Cena (Kč)
+              {t('products.price')}
             </label>
             <input
               type="number"
               inputMode="decimal"
-              placeholder="např. 85"
+              placeholder={t('products.pricePlaceholder')}
               value={newItemPrice}
               onChange={(e) => setNewItemPrice(e.target.value)}
               className="bg-zinc-50/50 border border-zinc-200 rounded-xl px-3.5 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-zinc-900 font-mono transition-all font-medium"
@@ -145,15 +152,13 @@ export default function ProductsSettingsSection({
               onChange={(e) => setShowScriptField(e.target.checked)}
               className="w-4 h-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900 cursor-pointer"
             />
-            <span>Speciální pravidlo ceny (skript)</span>
+            <span>{t('products.customScript')}</span>
           </label>
 
           {showScriptField && (
             <div className="flex flex-col gap-2 mt-1 animate-fade-in">
               <span className="text-[11px] text-zinc-400 leading-normal">
-                JavaScript vracející celkovou cenu z proměnných{' '}
-                <code className="text-zinc-600 font-mono">quantity</code> a{' '}
-                <code className="text-zinc-600 font-mono">price</code>.
+                {t('products.customScriptDesc')}
               </span>
 
               <textarea
@@ -174,7 +179,7 @@ export default function ProductsSettingsSection({
                 className="text-[11px] bg-zinc-100 hover:bg-zinc-200/70 text-zinc-700 font-medium px-2.5 py-1.5 rounded-lg active:scale-95 transition-all cursor-pointer self-start flex items-center gap-1"
               >
                 <Code2 size={12} />
-                Šablona: Akce 2+1 zdarma
+                2+1 Script
               </button>
             </div>
           )}
@@ -192,11 +197,11 @@ export default function ProductsSettingsSection({
         >
           {editingProductId ? (
             <>
-              <Check size={14} strokeWidth={2.5} /> Uložit úpravy
+              <Check size={14} strokeWidth={2.5} /> {t('common.save')}
             </>
           ) : (
             <>
-              <Plus size={14} strokeWidth={2.5} /> Přidat produkt
+              <Plus size={14} strokeWidth={2.5} /> {t('products.addProduct')}
             </>
           )}
         </button>
@@ -205,13 +210,12 @@ export default function ProductsSettingsSection({
       {/* List of stored custom products */}
       <div>
         <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2 px-1">
-          Aktuální položky ({products.length})
+          {t('products.title')} ({products.length})
         </h3>
 
         {products.length === 0 ? (
           <div className="py-8 px-4 text-center rounded-2xl bg-white border border-zinc-200/80 text-xs text-zinc-400">
-            V nabídce zatím nejsou žádné produkty. Přidejte první produkt
-            formulářem výše.
+            {t('products.empty')}
           </div>
         ) : (
           <div className="bg-white rounded-2xl border border-zinc-200/80 divide-y divide-zinc-100 overflow-hidden shadow-xs">
@@ -230,20 +234,20 @@ export default function ProductsSettingsSection({
                   </span>
                   {product.script && (
                     <span className="bg-zinc-100 text-zinc-500 text-[10px] font-medium px-1.5 py-0.5 rounded">
-                      skript
+                      script
                     </span>
                   )}
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
                   <span className="text-sm font-semibold text-zinc-900 font-mono mr-1">
-                    {product.price.toLocaleString('cs-CZ')} Kč
+                    {formatCurrency(product.price)}
                   </span>
                   <button
                     type="button"
                     onClick={() => handleStartEdit(product)}
                     className="p-1.5 text-zinc-400 hover:text-zinc-800 rounded-lg hover:bg-zinc-100 transition-colors cursor-pointer"
-                    aria-label={`Upravit ${product.name}`}
+                    aria-label={`${t('common.edit')} ${product.name}`}
                   >
                     <Pencil size={15} />
                   </button>
@@ -251,7 +255,7 @@ export default function ProductsSettingsSection({
                     type="button"
                     onClick={() => handleDelete(product.id)}
                     className="p-1.5 text-zinc-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
-                    aria-label={`Smazat ${product.name}`}
+                    aria-label={`${t('common.delete')} ${product.name}`}
                   >
                     <Trash2 size={15} />
                   </button>

@@ -7,9 +7,11 @@ import CartDrawer from './components/CartDrawer.jsx'
 import PaymentModal from './components/PaymentModal.jsx'
 import OnboardingScreen from './components/Onboarding/OnboardingScreen.jsx'
 import { getItemTotal, triggerHaptic } from './utils/paymentUtils.js'
+import { useI18n } from './i18n/useI18n.js'
 
 function PosApp() {
   const { instance, settings, products, isLoading, recordSale } = useMerchant()
+  const { t, formatCurrency } = useI18n()
 
   // Screens & overlays state
   const [activeScreen, setActiveScreen] = useState('pos') // 'pos' | 'settings' | 'statistics'
@@ -85,7 +87,7 @@ function PosApp() {
         })
       }
     } catch (e) {
-      console.error('Chyba při ukládání prodeje:', e)
+      console.error('Error saving sale:', e)
     }
     handleClearCart()
   }
@@ -126,7 +128,7 @@ function PosApp() {
             </div>
           )}
           <span className="text-xl font-bold tracking-tight text-zinc-900 truncate">
-            {settings.businessName || 'Pokladna'}
+            {settings.businessName || t('pos.defaultTitle')}
           </span>
         </div>
 
@@ -138,8 +140,8 @@ function PosApp() {
               setActiveScreen('statistics')
             }}
             className="p-2 text-zinc-500 hover:text-zinc-950 hover:bg-zinc-50 rounded-full transition-all active:scale-90 cursor-pointer"
-            title="Statistiky a události"
-            aria-label="Statistiky"
+            title={t('pos.statisticsTooltip')}
+            aria-label={t('pos.statisticsTooltip')}
           >
             <BarChart3 size={20} strokeWidth={2} />
           </button>
@@ -151,8 +153,8 @@ function PosApp() {
               setActiveScreen('settings')
             }}
             className="p-2 text-zinc-500 hover:text-zinc-950 hover:bg-zinc-50 rounded-full transition-all active:scale-90 cursor-pointer"
-            title="Nastavení"
-            aria-label="Nastavení"
+            title={t('pos.settingsTooltip')}
+            aria-label={t('pos.settingsTooltip')}
           >
             <Settings size={20} strokeWidth={2} />
           </button>
@@ -168,17 +170,16 @@ function PosApp() {
                 <ShoppingBag size={22} className="text-zinc-400" />
               </div>
               <h3 className="text-sm font-bold text-zinc-900">
-                Zatím nemáte žádné produkty
+                {t('pos.emptyTitle')}
               </h3>
               <p className="text-xs text-zinc-400 max-w-xs mt-1.5 leading-relaxed">
-                Přejděte do nastavení kliknutím na ozubené kolečko v pravém
-                horním rohu a přidejte své vlastní produkty a ceny.
+                {t('pos.emptyDesc')}
               </p>
               <button
                 onClick={() => setActiveScreen('settings')}
                 className="mt-5 bg-zinc-950 hover:bg-zinc-800 text-white text-xs font-semibold rounded-xl py-2.5 px-4 active:scale-95 transition-all cursor-pointer"
               >
-                Nastavit produkty
+                {t('pos.emptyAction')}
               </button>
             </div>
           ) : (
@@ -192,7 +193,7 @@ function PosApp() {
                   {product.name}
                 </span>
                 <span className="text-sm font-medium text-zinc-500 mt-2 font-mono">
-                  {product.price.toLocaleString('cs-CZ')} Kč
+                  {formatCurrency(product.price)}
                 </span>
               </button>
             ))

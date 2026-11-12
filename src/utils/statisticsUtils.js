@@ -3,16 +3,18 @@
  */
 
 /**
- * Formats a date/timestamp to local Czech date string (e.g. '12. 11. 2026').
+ * Formats a date/timestamp to display date string (Czech or English).
  *
  * @param {string|number|Date} dateVal
+ * @param {'cs'|'en'} [lang='cs']
  * @returns {string}
  */
-export function formatDisplayDate(dateVal) {
+export function formatDisplayDate(dateVal, lang = 'cs') {
   if (!dateVal) return ''
   const d = new Date(dateVal)
   if (isNaN(d.getTime())) return ''
-  return d.toLocaleDateString('cs-CZ', {
+  const locale = lang === 'en' ? 'en-US' : 'cs-CZ'
+  return d.toLocaleDateString(locale, {
     day: 'numeric',
     month: 'numeric',
     year: 'numeric',
@@ -23,15 +25,18 @@ export function formatDisplayDate(dateVal) {
  * Formats a date/timestamp to local time string (e.g. '14:30').
  *
  * @param {string|number|Date} dateVal
+ * @param {'cs'|'en'} [lang='cs']
  * @returns {string}
  */
-export function formatDisplayTime(dateVal) {
+export function formatDisplayTime(dateVal, lang = 'cs') {
   if (!dateVal) return ''
   const d = new Date(dateVal)
   if (isNaN(d.getTime())) return ''
-  return d.toLocaleTimeString('cs-CZ', {
+  const locale = lang === 'en' ? 'en-US' : 'cs-CZ'
+  return d.toLocaleTimeString(locale, {
     hour: '2-digit',
     minute: '2-digit',
+    hour12: false,
   })
 }
 
@@ -39,13 +44,14 @@ export function formatDisplayTime(dateVal) {
  * Formats a date/timestamp to local date and time string (e.g. '12. 11. 2026 14:30').
  *
  * @param {string|number|Date} dateVal
+ * @param {'cs'|'en'} [lang='cs']
  * @returns {string}
  */
-export function formatDisplayDateTime(dateVal) {
+export function formatDisplayDateTime(dateVal, lang = 'cs') {
   if (!dateVal) return ''
   const d = new Date(dateVal)
   if (isNaN(d.getTime())) return ''
-  return `${formatDisplayDate(d)} ${formatDisplayTime(d)}`
+  return `${formatDisplayDate(d, lang)} ${formatDisplayTime(d, lang)}`
 }
 
 /**
@@ -115,6 +121,7 @@ export function calculateEventExpenses(expenses = []) {
  * Computes summary aggregations for a list of sales.
  *
  * @param {Array<object>} sales
+ * @param {'cs'|'en'} [lang='cs']
  * @returns {{
  *   totalRevenue: number,
  *   salesCount: number,
@@ -125,7 +132,7 @@ export function calculateEventExpenses(expenses = []) {
  *   itemBreakdown: Array<{ name: string, quantity: number, total: number }>
  * }}
  */
-export function calculateSalesSummary(sales = []) {
+export function calculateSalesSummary(sales = [], lang = 'cs') {
   let totalRevenue = 0
   let cashTotal = 0
   let cashCount = 0
@@ -147,7 +154,8 @@ export function calculateSalesSummary(sales = []) {
 
     if (Array.isArray(sale.items)) {
       for (const it of sale.items) {
-        const name = it.name || 'Neznámá položka'
+        const name =
+          it.name || (lang === 'en' ? 'Unknown item' : 'Neznámá položka')
         const qty = Number(it.quantity) || 1
         const total =
           typeof it.total === 'number'
@@ -183,7 +191,8 @@ export function calculateSalesSummary(sales = []) {
  *
  * @param {Array<object>} sales
  * @param {Array<object>} events
- * @param {number} [now]
+ * @param {'cs'|'en'|number} [langOrNow='cs']
+ * @param {number|'cs'|'en'} [optionalParam]
  * @returns {{
  *   overall: {
  *     totalRevenue: number,
@@ -224,7 +233,27 @@ export function calculateSalesSummary(sales = []) {
  *   allSalesSorted: Array<object>
  * }}
  */
-export function categorizeSales(sales = [], events = [], now = Date.now()) {
+export function categorizeSales(
+  sales = [],
+  events = [],
+  langOrNow = 'cs',
+  optionalParam
+) {
+  let lang = 'cs'
+  let now = Date.now()
+
+  if (typeof langOrNow === 'string') {
+    lang = langOrNow
+    if (typeof optionalParam === 'number') {
+      now = optionalParam
+    }
+  } else if (typeof langOrNow === 'number') {
+    now = langOrNow
+    if (typeof optionalParam === 'string') {
+      lang = optionalParam
+    }
+  }
+
   const allSalesSorted = [...sales].sort((a, b) => {
     const timeA = new Date(a.timestamp || a.date).getTime()
     const timeB = new Date(b.timestamp || b.date).getTime()
@@ -266,7 +295,7 @@ export function categorizeSales(sales = [], events = [], now = Date.now()) {
 
   // Calculate summaries and dynamic profits for events
   const categorizedEvents = parsedEvents.map((evt) => {
-    const salesSummary = calculateSalesSummary(evt.sales)
+    const salesSummary = calculateSalesSummary(evt.sales, lang)
     const expenses = Array.isArray(evt.event.expenses) ? evt.event.expenses : []
     const totalExpenses = calculateEventExpenses(expenses)
     const netProfit =
@@ -298,7 +327,7 @@ export function categorizeSales(sales = [], events = [], now = Date.now()) {
     if (!dayMap.has(dateKey)) {
       dayMap.set(dateKey, {
         dateKey,
-        displayDate: formatDisplayDate(saleTime),
+        displayDate: formatDisplayDate(saleTime, lang),
         sales: [],
       })
     }
@@ -310,10 +339,10 @@ export function categorizeSales(sales = [], events = [], now = Date.now()) {
     .sort((a, b) => (a.dateKey > b.dateKey ? -1 : 1))
     .map((day) => ({
       ...day,
-      summary: calculateSalesSummary(day.sales),
+      summary: calculateSalesSummary(day.sales, lang),
     }))
 
-  const overallSales = calculateSalesSummary(allSalesSorted)
+  const overallSales = calculateSalesSummary(allSalesSorted, lang)
   const overallExpenses = categorizedEvents.reduce(
     (sum, evt) => sum + evt.summary.totalExpenses,
     0

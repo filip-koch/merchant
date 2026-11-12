@@ -1,5 +1,6 @@
 import { AlertTriangle, Trash2, X } from 'lucide-react'
 import { triggerHaptic } from '../../utils/paymentUtils.js'
+import { useI18n } from '../../i18n/useI18n.js'
 
 export default function DeleteConfirmModal({
   merchantName,
@@ -7,6 +8,8 @@ export default function DeleteConfirmModal({
   onClose,
   onConfirm,
 }) {
+  const { t } = useI18n()
+
   if (!isOpen) return null
 
   const handleConfirm = () => {
@@ -31,7 +34,7 @@ export default function DeleteConfirmModal({
           <button
             onClick={onClose}
             className="p-1.5 text-zinc-400 hover:text-zinc-600 rounded-full transition-colors cursor-pointer"
-            aria-label="Zavřít"
+            aria-label={t('common.close')}
           >
             <X size={18} />
           </button>
@@ -39,12 +42,10 @@ export default function DeleteConfirmModal({
 
         <div>
           <h3 className="text-base font-semibold text-zinc-900">
-            Smazat pokladnu?
+            {t('deleteConfirm.title')}
           </h3>
           <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
-            Opravdu chcete smazat instanci{' '}
-            <strong className="text-zinc-800">„{merchantName}“</strong>? Dojde k
-            vymazání všech produktů a nastavení pokladny.
+            {t('deleteConfirm.desc')} ({merchantName})
           </p>
         </div>
 
@@ -54,7 +55,7 @@ export default function DeleteConfirmModal({
             onClick={onClose}
             className="flex-1 py-2.5 px-4 rounded-xl border border-zinc-200 text-zinc-700 font-semibold text-xs hover:bg-zinc-50 active:scale-95 transition-all cursor-pointer"
           >
-            Zrušit
+            {t('common.cancel')}
           </button>
           <button
             type="button"
@@ -62,7 +63,7 @@ export default function DeleteConfirmModal({
             className="flex-1 py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5"
           >
             <Trash2 size={14} />
-            <span>Smazat</span>
+            <span>{t('common.delete')}</span>
           </button>
         </div>
       </div>

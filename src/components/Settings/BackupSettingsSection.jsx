@@ -3,6 +3,7 @@ import { Download, Upload, Copy, Check, Trash2 } from 'lucide-react'
 import DeleteConfirmModal from './DeleteConfirmModal.jsx'
 import { triggerHaptic } from '../../utils/paymentUtils.js'
 import { validateBackupPayload } from '../../services/storage/schemaValidator.js'
+import { useI18n } from '../../i18n/useI18n.js'
 
 export default function BackupSettingsSection({
   instance,
@@ -10,6 +11,7 @@ export default function BackupSettingsSection({
   onImport,
   onDeleteInstance,
 }) {
+  const { t } = useI18n()
   const [copied, setCopied] = useState(false)
   const [exportSuccess, setExportSuccess] = useState(false)
   const [importError, setImportError] = useState('')
@@ -24,7 +26,7 @@ export default function BackupSettingsSection({
       setExportSuccess(true)
       setTimeout(() => setExportSuccess(false), 3000)
     } catch (err) {
-      console.error('Export selhal:', err)
+      console.error('Export error:', err)
     }
   }
 
@@ -38,7 +40,7 @@ export default function BackupSettingsSection({
         setTimeout(() => setCopied(false), 2500)
       }
     } catch (err) {
-      console.error('Kopírování selhalo:', err)
+      console.error('Copy error:', err)
     }
   }
 
@@ -49,7 +51,7 @@ export default function BackupSettingsSection({
     if (!file) return
 
     if (!file.name.endsWith('.json')) {
-      setImportError('Vyberte prosím platný soubor zálohy (.json).')
+      setImportError(t('backup.importError'))
       return
     }
 
@@ -63,7 +65,7 @@ export default function BackupSettingsSection({
         const validation = validateBackupPayload(parsed)
 
         if (!validation.valid || !validation.backup) {
-          setImportError(validation.error || 'Neplatná struktura zálohy.')
+          setImportError(validation.error || t('backup.importError'))
           return
         }
 
@@ -72,9 +74,7 @@ export default function BackupSettingsSection({
         setImportSuccess(true)
         setTimeout(() => setImportSuccess(false), 3000)
       } catch (err) {
-        setImportError(
-          err.message || 'Chyba při čtení nebo importování záložního souboru.'
-        )
+        setImportError(err.message || t('backup.importError'))
       }
     }
     reader.readAsText(file)
@@ -86,11 +86,10 @@ export default function BackupSettingsSection({
       <div className="bg-white border border-zinc-200/80 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col gap-3">
         <div>
           <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-            Zálohování a export
+            {t('backup.exportTitle')}
           </h3>
           <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
-            Stáhněte kompletní data této pokladny včetně položek, nastavení a
-            historie událostí.
+            {t('backup.exportDesc')}
           </p>
         </div>
 
@@ -101,7 +100,7 @@ export default function BackupSettingsSection({
             className="flex-1 bg-zinc-900 hover:bg-zinc-800 text-white font-semibold py-2.5 px-4 rounded-xl text-xs transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-1.5"
           >
             <Download size={14} />
-            <span>Stáhnout zálohu (.json)</span>
+            <span>{t('backup.exportButton')} (.json)</span>
           </button>
 
           <button
@@ -113,13 +112,13 @@ export default function BackupSettingsSection({
               <>
                 <Check size={14} className="text-emerald-600" />
                 <span className="text-emerald-700 font-semibold">
-                  Zkopírováno
+                  {t('common.success')}
                 </span>
               </>
             ) : (
               <>
                 <Copy size={14} />
-                <span>Kopírovat JSON</span>
+                <span>JSON</span>
               </>
             )}
           </button>
@@ -127,7 +126,7 @@ export default function BackupSettingsSection({
 
         {exportSuccess && (
           <div className="text-xs text-emerald-800 font-medium bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 text-center">
-            Záloha byla úspěšně stažena.
+            {t('backup.importSuccess')}
           </div>
         )}
       </div>
@@ -136,12 +135,10 @@ export default function BackupSettingsSection({
       <div className="bg-white border border-zinc-200/80 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col gap-3">
         <div>
           <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-            Obnovit ze zálohy
+            {t('backup.importTitle')}
           </h3>
           <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
-            Nahrajte dříve stažený soubor{' '}
-            <code className="font-mono text-zinc-700">.json</code> pro obnovu
-            pokladny.
+            {t('backup.importDesc')}
           </p>
         </div>
 
@@ -159,7 +156,7 @@ export default function BackupSettingsSection({
           className="border border-dashed border-zinc-200 hover:border-zinc-300 bg-zinc-50/50 hover:bg-zinc-50 text-zinc-700 font-medium py-2.5 px-4 rounded-xl text-xs transition-colors cursor-pointer flex items-center justify-center gap-2"
         >
           <Upload size={14} />
-          <span>Vybrat soubor .json</span>
+          <span>{t('backup.importButton')} (.json)</span>
         </button>
 
         {importError && (
@@ -170,7 +167,7 @@ export default function BackupSettingsSection({
 
         {importSuccess && (
           <div className="text-xs text-emerald-800 font-medium bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 text-center">
-            Pokladna byla úspěšně obnovena ze zálohy.
+            {t('backup.importSuccess')}
           </div>
         )}
       </div>
@@ -179,10 +176,10 @@ export default function BackupSettingsSection({
       <div className="border border-rose-200/80 bg-white rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col gap-3">
         <div>
           <h3 className="text-xs font-semibold text-rose-600 uppercase tracking-wider">
-            Nebezpečná zóna
+            {t('backup.deleteInstanceTitle')}
           </h3>
           <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
-            Vymaže všechny položky a historii pokladny. Akci nelze vzít zpět.
+            {t('backup.deleteInstanceDesc')}
           </p>
         </div>
 
@@ -192,13 +189,13 @@ export default function BackupSettingsSection({
           className="text-rose-600 hover:bg-rose-50 border border-rose-200 font-semibold py-2.5 px-4 rounded-xl text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 w-full"
         >
           <Trash2 size={14} />
-          <span>Smazat data pokladny</span>
+          <span>{t('backup.deleteButton')}</span>
         </button>
       </div>
 
       {/* Delete Confirmation Modal */}
       <DeleteConfirmModal
-        merchantName={instance?.name || 'Moje Pokladna'}
+        merchantName={instance?.name || 'Pokladna'}
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={async () => {

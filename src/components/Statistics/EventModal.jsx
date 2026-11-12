@@ -2,8 +2,10 @@ import { useState } from 'react'
 import { X, Clock } from 'lucide-react'
 import { toDatetimeLocalValue } from '../../utils/statisticsUtils.js'
 import { triggerHaptic } from '../../utils/paymentUtils.js'
+import { useI18n } from '../../i18n/useI18n.js'
 
 function EventModalContent({ onClose, onSave, eventToEdit }) {
+  const { t } = useI18n()
   const [name, setName] = useState(eventToEdit?.name || '')
   const [startDateTime, setStartDateTime] = useState(() => {
     if (eventToEdit?.startDateTime) {
@@ -25,17 +27,12 @@ function EventModalContent({ onClose, onSave, eventToEdit }) {
 
     const trimmedName = name.trim()
     if (!trimmedName) {
-      setError('Zadejte prosím název události.')
+      setError(t('eventModal.missingName'))
       return
     }
 
-    if (!startDateTime) {
-      setError('Zvolte prosím začátek události.')
-      return
-    }
-
-    if (!endDateTime) {
-      setError('Zvolte prosím konec události.')
+    if (!startDateTime || !endDateTime) {
+      setError(t('common.required'))
       return
     }
 
@@ -43,12 +40,12 @@ function EventModalContent({ onClose, onSave, eventToEdit }) {
     const endMs = new Date(endDateTime).getTime()
 
     if (isNaN(startMs) || isNaN(endMs)) {
-      setError('Zadané datum a čas je neplatné.')
+      setError(t('common.error'))
       return
     }
 
     if (endMs < startMs) {
-      setError('Konec události nemůže předcházet jejímu začátku.')
+      setError(t('eventModal.invalidDates'))
       return
     }
 
@@ -61,7 +58,7 @@ function EventModalContent({ onClose, onSave, eventToEdit }) {
       })
       onClose()
     } catch (err) {
-      setError(err.message || 'Nepodařilo se uložit událost.')
+      setError(err.message || t('common.error'))
     }
   }
 
@@ -79,16 +76,18 @@ function EventModalContent({ onClose, onSave, eventToEdit }) {
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-base font-semibold text-zinc-900">
-              {eventToEdit ? 'Upravit událost' : 'Nová událost'}
+              {eventToEdit
+                ? t('eventModal.editTitle')
+                : t('eventModal.newTitle')}
             </h3>
             <p className="text-xs text-zinc-400 mt-0.5">
-              Prodeje v tomto čase se zařadí k události
+              {t('statistics.uncategorizedDesc')}
             </p>
           </div>
           <button
             onClick={onClose}
             className="p-1.5 text-zinc-400 hover:text-zinc-700 rounded-full transition-colors cursor-pointer"
-            aria-label="Zavřít"
+            aria-label={t('common.close')}
           >
             <X size={18} />
           </button>
@@ -104,13 +103,13 @@ function EventModalContent({ onClose, onSave, eventToEdit }) {
           {/* Event Name */}
           <div>
             <label className="block text-xs font-medium text-zinc-700 mb-1">
-              Název události
+              {t('eventModal.nameLabel')}
             </label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="např. Víkendové trhy, Jarmark..."
+              placeholder={t('eventModal.namePlaceholder')}
               maxLength={100}
               className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 focus:outline-none focus:border-zinc-900 text-sm font-medium text-zinc-900 bg-zinc-50/50 transition-all"
               autoFocus
@@ -121,7 +120,7 @@ function EventModalContent({ onClose, onSave, eventToEdit }) {
           <div>
             <label className="block text-xs font-medium text-zinc-700 mb-1 flex items-center gap-1">
               <Clock size={12} className="text-zinc-400" />
-              Začátek události
+              {t('eventModal.startLabel')}
             </label>
             <input
               type="datetime-local"
@@ -135,7 +134,7 @@ function EventModalContent({ onClose, onSave, eventToEdit }) {
           <div>
             <label className="block text-xs font-medium text-zinc-700 mb-1 flex items-center gap-1">
               <Clock size={12} className="text-zinc-400" />
-              Konec události
+              {t('eventModal.endLabel')}
             </label>
             <input
               type="datetime-local"
@@ -152,13 +151,13 @@ function EventModalContent({ onClose, onSave, eventToEdit }) {
               onClick={onClose}
               className="flex-1 py-2.5 px-4 rounded-xl border border-zinc-200 text-zinc-700 font-semibold text-xs hover:bg-zinc-50 active:scale-95 transition-all cursor-pointer"
             >
-              Zrušit
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
               className="flex-1 py-2.5 px-4 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white font-semibold text-xs active:scale-95 transition-all cursor-pointer"
             >
-              {eventToEdit ? 'Uložit' : 'Vytvořit'}
+              {eventToEdit ? t('common.save') : t('common.create')}
             </button>
           </div>
         </form>

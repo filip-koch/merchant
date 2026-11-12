@@ -5,8 +5,10 @@ import GeneralSettingsSection from './GeneralSettingsSection.jsx'
 import ProductsSettingsSection from './ProductsSettingsSection.jsx'
 import BackupSettingsSection from './BackupSettingsSection.jsx'
 import { triggerHaptic } from '../../utils/paymentUtils.js'
+import { useI18n } from '../../i18n/useI18n.js'
 
 export default function SettingsScreen({ onClose }) {
+  const { t } = useI18n()
   const {
     instance,
     settings,
@@ -34,12 +36,12 @@ export default function SettingsScreen({ onClose }) {
         <button
           onClick={onClose}
           className="p-2 -ml-2 text-zinc-600 hover:text-zinc-950 hover:bg-zinc-100 rounded-full transition-all active:scale-95 cursor-pointer"
-          aria-label="Zpět do pokladny"
+          aria-label={t('common.back')}
         >
           <ArrowLeft size={20} />
         </button>
         <h2 className="text-base font-semibold text-zinc-900 tracking-tight">
-          Nastavení pokladny
+          {t('settings.title')}
         </h2>
         <div className="w-8 h-8" /> {/* Spacer for symmetry */}
       </header>
@@ -57,7 +59,7 @@ export default function SettingsScreen({ onClose }) {
             }`}
           >
             <Store size={14} />
-            <span>Údaje</span>
+            <span>{t('settings.tabGeneral')}</span>
           </button>
 
           <button
@@ -70,7 +72,9 @@ export default function SettingsScreen({ onClose }) {
             }`}
           >
             <Package size={14} />
-            <span>Položky ({products.length})</span>
+            <span>
+              {t('settings.tabProducts')} ({products.length})
+            </span>
           </button>
 
           <button
@@ -83,7 +87,7 @@ export default function SettingsScreen({ onClose }) {
             }`}
           >
             <Database size={14} />
-            <span>Záloha</span>
+            <span>{t('settings.tabBackup')}</span>
           </button>
         </div>
       </div>

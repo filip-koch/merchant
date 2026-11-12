@@ -86,6 +86,7 @@ async function checkAndMigrateLegacyData() {
         accountNumber: legacyAccount.trim(),
         bankId: legacyBankId.trim(),
         currency: 'CZK',
+        language: 'cs',
       }
 
       await idbSet(KEYS.INSTANCE, instance)
@@ -141,6 +142,7 @@ export async function loadMerchantData() {
     bankId: '',
     logo: '',
     currency: 'CZK',
+    language: 'cs',
   }
 
   return {
@@ -162,6 +164,7 @@ export async function loadMerchantData() {
  * @param {string} params.name
  * @param {string} [params.accountNumber]
  * @param {string} [params.bankId]
+ * @param {string} [params.language='cs']
  * @param {boolean} [params.includeSampleProducts=true]
  * @returns {Promise<{ instance: object, settings: object, products: Array<object>, events: Array<object>, sales: Array<object> }>}
  */
@@ -169,6 +172,7 @@ export async function initializeMerchantInstance({
   name,
   accountNumber = '',
   bankId = '',
+  language = 'cs',
   includeSampleProducts = true,
 }) {
   const safeName = (name || 'Pokladna').trim().slice(0, 80)
@@ -176,6 +180,7 @@ export async function initializeMerchantInstance({
     businessName: safeName,
     accountNumber,
     bankId,
+    language,
   })
 
   if (!settingsValidation.valid) {
